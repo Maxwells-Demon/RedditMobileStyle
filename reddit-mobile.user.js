@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      0.2.0
+// @version      0.3.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://old.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 0.1.0
+ * Reddit Mobile Style 0.3.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -153,6 +153,28 @@ html.reddit-mobile-style #header-bottom-right {
     box-sizing: border-box;
 }
 
+html.reddit-mobile-style #sr-header-area .width-clip,
+html.reddit-mobile-style #sr-header-area .sr-list {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    box-sizing: border-box;
+}
+
+html.reddit-mobile-style #header-bottom-left .pagename,
+html.reddit-mobile-style #header-bottom-left .tabmenu {
+    float: none !important;
+}
+
+html.reddit-mobile-style #header-bottom-left .tabmenu {
+    flex: 1 1 auto;
+    width: auto !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+}
+
 html.reddit-mobile-style #header-bottom-left {
     display: flex !important;
     flex-wrap: wrap;
@@ -174,7 +196,6 @@ html.reddit-mobile-style #header-img {
 html.reddit-mobile-style .tabmenu {
     min-width: 0 !important;
     max-width: 100% !important;
-    white-space: normal !important;
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
