@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.3.0
+// @version      1.4.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -538,11 +538,10 @@ html.reddit-mobile-style .rms-drawer {
     transition: transform .18s ease !important;
     overscroll-behavior: contain !important;
     -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-y !important;
+    box-sizing: border-box !important;
 }
 
 html.reddit-mobile-style .rms-drawer > * {
-    touch-action: pan-y !important;
     box-sizing: border-box !important;
 }
 
@@ -741,6 +740,20 @@ html.reddit-mobile-style .rms-drawer-close {
         });
 
         backdrop.addEventListener('click', closeDrawers);
+
+        // The native listing chooser has a collapse handler on its container.
+        // In the mobile tray that handler must not consume clicks on actual
+        // multireddit links. Stop propagation during capture while preserving
+        // the anchor's normal default navigation.
+        document.addEventListener('click', (event) => {
+            const left = findLeftDrawer();
+            if (!left || !left.classList.contains('rms-open')) return;
+
+            const link = event.target.closest && event.target.closest('a');
+            if (!link || !left.contains(link)) return;
+
+            event.stopPropagation();
+        }, true);
 
         // Do not globally disable page scrolling while a drawer is open.
         // Instead, let touch gestures inside the fixed drawer scroll it and
