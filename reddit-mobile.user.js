@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      0.3.0
+// @version      0.4.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://old.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 0.3.0
+ * Reddit Mobile Style 0.4.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -103,7 +103,7 @@ html.reddit-mobile-style body {
 
 html.reddit-mobile-style body {
     margin: 0 !important;
-    overflow-x: auto;
+    overflow-x: hidden;
 }
 
 html.reddit-mobile-style body > *,
@@ -234,7 +234,9 @@ html.reddit-mobile-style #siteTable {
  * Reddit dialogs can have intentionally different geometry. These rules
  * only remove fixed-width constraints from the classic shell.
  */
-html.reddit-mobile-style #header *,
+html.reddit-mobile-style #header img,
+html.reddit-mobile-style #header iframe,
+html.reddit-mobile-style #header table,
 html.reddit-mobile-style .content,
 html.reddit-mobile-style #siteTable {
     max-width: 100%;
@@ -320,9 +322,9 @@ html.reddit-mobile-style .thing > .entry {
 /* Prevent the classic thumbnail float from consuming desktop-sized geometry. */
 html.reddit-mobile-style .thing .thumbnail {
     float: right !important;
-    width: 70px !important;
+    width: min(70px, 25vw) !important;
     max-width: 25vw !important;
-    height: 70px !important;
+    height: auto !important;
     max-height: 70px !important;
     margin: 0 0 4px 8px !important;
     box-sizing: border-box !important;
@@ -331,9 +333,9 @@ html.reddit-mobile-style .thing .thumbnail {
 html.reddit-mobile-style .thing .thumbnail img {
     display: block;
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     max-width: 100% !important;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 /* Text columns must be allowed to shrink rather than force page overflow. */
@@ -463,7 +465,8 @@ html.reddit-mobile-style .nextprev {
 
     html.reddit-mobile-style .thing .thumbnail {
         width: 62px !important;
-        height: 62px !important;
+        max-width: 62px !important;
+        max-height: 62px !important;
     }
 }
         `;
