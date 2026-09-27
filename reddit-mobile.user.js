@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      0.8.0
+// @version      0.9.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://old.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 0.8.0
+ * Reddit Mobile Style 0.9.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -529,28 +529,45 @@ html.reddit-mobile-style .rms-drawer {
     max-height: 100vh !important;
     max-height: 100dvh !important;
     margin: 0 !important;
-    padding: 8px !important;
-    overflow-x: hidden !important;
-    overflow-y: scroll !important;
+    padding: 0 !important;
+    overflow: hidden !important;
     box-sizing: border-box !important;
     pointer-events: auto !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch !important;
     background: #e1e1e1 !important;
     transition: transform .18s ease !important;
-    overscroll-behavior: contain !important;
-    overscroll-behavior-y: contain !important;
-    -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-y !important;
-    scrollbar-width: auto !important;
 }
 
-html.reddit-mobile-style .rms-drawer > * {
+html.reddit-mobile-style .rms-drawer-content {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
     touch-action: pan-y !important;
 }
-html.reddit-mobile-style .rms-left-drawer > * {
+
+html.reddit-mobile-style .rms-drawer-content > * {
+    touch-action: pan-y !important;
+}
+
+html.reddit-mobile-style .rms-left-drawer > .rms-drawer-content {
     max-width: 100% !important;
-    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style .rms-left-drawer .rms-drawer-content {
+    background: #e1e1e1 !important;
+}
+
+html.reddit-mobile-style .rms-right-drawer .rms-drawer-content {
+    background: #e1e1e1 !important;
 }
 
 html.reddit-mobile-style .rms-left-drawer {
@@ -723,14 +740,28 @@ html.reddit-mobile-style .rms-drawer-close {
                 'rms-open'
             );
 
-            if (!element.querySelector('.rms-drawer-close')) {
+            // Do not rely on the old Reddit/RES sidebar element itself as the
+            // scroll container. Those elements can have their own fixed
+            // heights/overflow rules. Put the live sidebar in a dedicated
+            // fixed-height scrolling viewport instead.
+            let shell = element.querySelector(':scope > .rms-drawer-content');
+            if (!shell) {
+                shell = document.createElement('div');
+                shell.className = 'rms-drawer-content';
+                while (element.firstChild) {
+                    shell.appendChild(element.firstChild);
+                }
+                element.appendChild(shell);
+            }
+
+            if (!shell.querySelector('.rms-drawer-close')) {
                 const close = document.createElement('button');
                 close.type = 'button';
                 close.className = 'rms-drawer-close';
                 close.textContent = 'Close';
                 close.setAttribute('aria-label', 'Close sidebar');
                 close.addEventListener('click', closeDrawers);
-                element.insertBefore(close, element.firstChild);
+                shell.insertBefore(close, shell.firstChild);
             }
 
             backdrop.classList.add('rms-open');
