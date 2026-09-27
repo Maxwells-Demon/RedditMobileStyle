@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.0.0
+// @version      1.1.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -551,11 +551,11 @@ html.reddit-mobile-style .rms-drawer-content {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior: contain !important;
-    touch-action: pan-y !important;
+    touch-action: none !important;
 }
 
 html.reddit-mobile-style .rms-drawer-content > * {
-    touch-action: pan-y !important;
+    touch-action: none !important;
 }
 
 html.reddit-mobile-style .rms-left-drawer > .rms-drawer-content {
@@ -831,25 +831,86 @@ html.reddit-mobile-style .rms-drawer-close {
 
         backdrop.addEventListener('click', closeDrawers);
 
-        // Do not globally disable page scrolling while a drawer is open.
-        // Instead, let touch gestures inside the fixed drawer scroll it and
-        // suppress only gestures that start outside the drawer.
-        document.addEventListener('touchmove', (event) => {
-            if (!html.classList.contains('rms-drawer-open')) return;
+        // While a drawer is open, Reddit/RES may install document-level touch
+        // handlers that prevent the drawer's native overflow scrolling. Handle
+        // drawer gestures in the capture phase and move the dedicated scroll
+        // viewport ourselves. Gestures outside the drawer are blocked so the
+        // fixed drawer remains modal.
+        let activeDrawerShell = null;
+        let lastDrawerY = 0;
+        let drawerDragging = false;
 
+        const findOpenDrawerShell = (target) => {
             const left = findLeftDrawer();
             const right = findRightDrawer();
-            const target = event.target;
 
-            if (
-                (left && left.classList.contains('rms-open') && left.contains(target)) ||
-                (right && right.classList.contains('rms-open') && right.contains(target))
-            ) {
+            for (const drawer of [left, right]) {
+                if (!drawer || !drawer.classList.contains('rms-open')) continue;
+
+                const shell = drawer.querySelector(':scope > .rms-drawer-content');
+                if (shell && shell.contains(target)) return shell;
+            }
+
+            return null;
+        };
+
+        const onDrawerTouchStart = (event) => {
+            if (!html.classList.contains('rms-drawer-open')) return;
+            if (event.touches.length !== 1) return;
+
+            activeDrawerShell = findOpenDrawerShell(event.target);
+            if (!activeDrawerShell) {
+                drawerDragging = false;
                 return;
             }
 
-            event.preventDefault();
-        }, { passive: false });
+            drawerDragging = true;
+            lastDrawerY = event.touches[0].clientY;
+        };
+
+        const onDrawerTouchMove = (event) => {
+            if (!html.classList.contains('rms-drawer-open')) return;
+
+            if (!activeDrawerShell || !drawerDragging || event.touches.length !== 1) {
+                // A gesture that did not start in the drawer belongs to the
+                // modal backdrop and must not scroll the page underneath it.
+                if (!findOpenDrawerShell(event.target)) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            const y = event.touches[0].clientY;
+            const delta = lastDrawerY - y;
+            lastDrawerY = y;
+
+            if (delta !== 0) {
+                activeDrawerShell.scrollTop += delta;
+                event.preventDefault();
+            }
+        };
+
+        const onDrawerTouchEnd = () => {
+            drawerDragging = false;
+            activeDrawerShell = null;
+        };
+
+        window.addEventListener('touchstart', onDrawerTouchStart, {
+            capture: true,
+            passive: true
+        });
+        window.addEventListener('touchmove', onDrawerTouchMove, {
+            capture: true,
+            passive: false
+        });
+        window.addEventListener('touchend', onDrawerTouchEnd, {
+            capture: true,
+            passive: true
+        });
+        window.addEventListener('touchcancel', onDrawerTouchEnd, {
+            capture: true,
+            passive: true
+        });
 
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') closeDrawers();
