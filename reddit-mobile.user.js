@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      0.7.0
+// @version      0.8.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://old.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 0.7.0
+ * Reddit Mobile Style 0.8.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -458,6 +458,17 @@ html.reddit-mobile-style #siteTable > .thing .flat-list > li:has(.crosspost-butt
     display: none !important;
 }
 
+
+html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[href*="l="]),
+html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="l="]),
+html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[href*="linkcomments"]),
+html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="share"]),
+html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="source"]),
+html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="report"]),
+html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="crosspost"]) {
+    display: none !important;
+}
+
 /* Expandos/media must respect the phone content column. */
 html.reddit-mobile-style #siteTable > .thing .expando,
 html.reddit-mobile-style #siteTable > .thing .expando-content,
@@ -514,19 +525,32 @@ html.reddit-mobile-style .rms-drawer {
     width: min(220px, 68vw) !important;
     max-width: 68vw !important;
     height: 100vh !important;
+    height: 100dvh !important;
     max-height: 100vh !important;
+    max-height: 100dvh !important;
     margin: 0 !important;
     padding: 8px !important;
     overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow-y: scroll !important;
     box-sizing: border-box !important;
-    background: #fff !important;
+    pointer-events: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: #e1e1e1 !important;
     transition: transform .18s ease !important;
     overscroll-behavior: contain !important;
     overscroll-behavior-y: contain !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
     scrollbar-width: auto !important;
+}
+
+html.reddit-mobile-style .rms-drawer > * {
+    touch-action: pan-y !important;
+}
+html.reddit-mobile-style .rms-left-drawer > * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 html.reddit-mobile-style .rms-left-drawer {
@@ -790,7 +814,27 @@ html.reddit-mobile-style .rms-drawer-close {
             }
         });
 
+        function removePostActions() {
+            document.querySelectorAll('#siteTable > .thing .flat-list li').forEach((li) => {
+                const text = (li.textContent || '').trim().toLowerCase();
+                if (
+                    text === '[l+c]' ||
+                    text === 'share' ||
+                    text === 'source' ||
+                    text === 'report' ||
+                    text === 'crosspost'
+                ) {
+                    li.remove();
+                }
+            });
+        }
+
+        removePostActions();
         observer.observe(document.documentElement, { childList: true, subtree: true });
+
+        // RES can add action links after initial rendering.
+        const actionObserver = new MutationObserver(removePostActions);
+        actionObserver.observe(document.documentElement, { childList: true, subtree: true });
     }
 
 
