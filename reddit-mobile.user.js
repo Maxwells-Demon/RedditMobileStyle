@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.9.0
+// @version      1.9.1
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.0.0
+ * Reddit Mobile Style 1.9.1
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -253,6 +253,11 @@ html.reddit-mobile-style .listing-chooser.rms-left-drawer {
     box-sizing: border-box !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    touch-action: pan-y !important;
+    min-height: 0 !important;
+    max-height: none !important;
     z-index: 2147483001 !important;
     background: #e1e1e1 !important;
     transform: translateX(-105%) !important;
