@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      0.9.0
+// @version      1.0.0
 // @description  Responsive shell for classic old Reddit on smartphones
-// @match        https://old.reddit.com/*
+// @match        https://*.reddit.com/*
 // @grant        none
 // @run-at       document-start
 // @noframes
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 0.9.0
+ * Reddit Mobile Style 1.0.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -705,6 +705,45 @@ html.reddit-mobile-style .rms-drawer-close {
             return document.querySelector('.side');
         }
 
+        function makeDrawerScrollable(shell) {
+            if (shell.dataset.rmsTouchScroll === '1') return;
+            shell.dataset.rmsTouchScroll = '1';
+
+            // Reddit/RES installs legacy touch handlers on document/body.
+            // Do not depend on native overflow scrolling winning that event
+            // arbitration. Drive the drawer's scrollTop directly from the
+            // finger gesture.
+            let dragging = false;
+            let lastY = 0;
+
+            shell.addEventListener('touchstart', (event) => {
+                if (event.touches.length !== 1) return;
+                dragging = true;
+                lastY = event.touches[0].clientY;
+            }, { passive: true });
+
+            shell.addEventListener('touchmove', (event) => {
+                if (!dragging || event.touches.length !== 1) return;
+
+                const y = event.touches[0].clientY;
+                const delta = lastY - y;
+                lastY = y;
+
+                if (delta !== 0) {
+                    shell.scrollTop += delta;
+                    event.preventDefault();
+                }
+            }, { passive: false });
+
+            shell.addEventListener('touchend', () => {
+                dragging = false;
+            }, { passive: true });
+
+            shell.addEventListener('touchcancel', () => {
+                dragging = false;
+            }, { passive: true });
+        }
+
         function closeDrawers() {
             const left = findLeftDrawer();
             const right = findRightDrawer();
@@ -753,6 +792,8 @@ html.reddit-mobile-style .rms-drawer-close {
                 }
                 element.appendChild(shell);
             }
+
+            makeDrawerScrollable(shell);
 
             if (!shell.querySelector('.rms-drawer-close')) {
                 const close = document.createElement('button');
@@ -821,26 +862,34 @@ html.reddit-mobile-style .rms-drawer-close {
             const right = findRightDrawer();
             if (left && left.classList.contains('rms-open')) {
                 left.classList.add('rms-drawer', 'rms-left-drawer');
-                if (!left.querySelector('.rms-drawer-close')) {
-                    const close = document.createElement('button');
-                    close.type = 'button';
-                    close.className = 'rms-drawer-close';
-                    close.textContent = 'Close';
-                    close.setAttribute('aria-label', 'Close sidebar');
-                    close.addEventListener('click', closeDrawers);
-                    left.insertBefore(close, left.firstChild);
+                const shell = left.querySelector(':scope > .rms-drawer-content');
+                if (shell) {
+                    makeDrawerScrollable(shell);
+                    if (!shell.querySelector('.rms-drawer-close')) {
+                        const close = document.createElement('button');
+                        close.type = 'button';
+                        close.className = 'rms-drawer-close';
+                        close.textContent = 'Close';
+                        close.setAttribute('aria-label', 'Close sidebar');
+                        close.addEventListener('click', closeDrawers);
+                        shell.insertBefore(close, shell.firstChild);
+                    }
                 }
             }
             if (right && right.classList.contains('rms-open')) {
                 right.classList.add('rms-drawer', 'rms-right-drawer');
-                if (!right.querySelector('.rms-drawer-close')) {
-                    const close = document.createElement('button');
-                    close.type = 'button';
-                    close.className = 'rms-drawer-close';
-                    close.textContent = 'Close';
-                    close.setAttribute('aria-label', 'Close sidebar');
-                    close.addEventListener('click', closeDrawers);
-                    right.insertBefore(close, right.firstChild);
+                const shell = right.querySelector(':scope > .rms-drawer-content');
+                if (shell) {
+                    makeDrawerScrollable(shell);
+                    if (!shell.querySelector('.rms-drawer-close')) {
+                        const close = document.createElement('button');
+                        close.type = 'button';
+                        close.className = 'rms-drawer-close';
+                        close.textContent = 'Close';
+                        close.setAttribute('aria-label', 'Close sidebar');
+                        close.addEventListener('click', closeDrawers);
+                        shell.insertBefore(close, shell.firstChild);
+                    }
                 }
             }
         });
