@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      0.6.0
+// @version      0.7.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://old.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 0.6.0
+ * Reddit Mobile Style 0.7.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -394,7 +394,7 @@ html.reddit-mobile-style #siteTable > .thing > .entry {
     width: auto !important;
     max-width: none !important;
     margin: 0 !important;
-    padding: 6px 8px 8px 0 !important;
+    padding: 3px 5px 5px 0 !important;
     box-sizing: border-box !important;
     float: none !important;
     overflow: visible !important;
@@ -422,8 +422,14 @@ html.reddit-mobile-style #siteTable > .thing .domain {
 }
 
 html.reddit-mobile-style #siteTable > .thing .tagline {
+    font-size: 13px !important;
     line-height: 1.35 !important;
     overflow-wrap: anywhere !important;
+}
+html.reddit-mobile-style #siteTable > .thing .flat-list,
+html.reddit-mobile-style #siteTable > .thing .flat-list a {
+    font-size: 13px !important;
+    line-height: 1.45 !important;
 }
 
 html.reddit-mobile-style #siteTable > .thing .flat-list {
@@ -438,6 +444,18 @@ html.reddit-mobile-style #siteTable > .thing .flat-list li {
     display: inline-block !important;
     min-width: 0 !important;
     max-width: 100% !important;
+}
+
+
+html.reddit-mobile-style #siteTable > .thing .share-button,
+html.reddit-mobile-style #siteTable > .thing .source-url,
+html.reddit-mobile-style #siteTable > .thing .report-button,
+html.reddit-mobile-style #siteTable > .thing .crosspost-button,
+html.reddit-mobile-style #siteTable > .thing .flat-list > li:has(.share-button),
+html.reddit-mobile-style #siteTable > .thing .flat-list > li:has(.source-url),
+html.reddit-mobile-style #siteTable > .thing .flat-list > li:has(.report-button),
+html.reddit-mobile-style #siteTable > .thing .flat-list > li:has(.crosspost-button) {
+    display: none !important;
 }
 
 /* Expandos/media must respect the phone content column. */
@@ -493,12 +511,12 @@ html.reddit-mobile-style .rms-drawer {
     bottom: 0 !important;
     z-index: 2147483001 !important;
     display: block !important;
-    width: min(260px, 82vw) !important;
-    max-width: 82vw !important;
+    width: min(220px, 68vw) !important;
+    max-width: 68vw !important;
     height: 100vh !important;
     max-height: 100vh !important;
     margin: 0 !important;
-    padding: 12px !important;
+    padding: 8px !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     box-sizing: border-box !important;
@@ -512,6 +530,8 @@ html.reddit-mobile-style .rms-drawer {
 }
 
 html.reddit-mobile-style .rms-left-drawer {
+    width: min(220px, 68vw) !important;
+    max-width: 68vw !important;
     left: 0 !important;
     right: auto !important;
     transform: translateX(-105%) !important;
@@ -522,6 +542,8 @@ html.reddit-mobile-style .rms-left-drawer.rms-open {
 }
 
 html.reddit-mobile-style .rms-right-drawer {
+    width: min(340px, 92vw) !important;
+    max-width: 92vw !important;
     right: 0 !important;
     left: auto !important;
     transform: translateX(105%) !important;
@@ -529,12 +551,6 @@ html.reddit-mobile-style .rms-right-drawer {
 
 html.reddit-mobile-style .rms-right-drawer.rms-open {
     transform: translateX(0) !important;
-}
-
-html.reddit-mobile-style.rms-drawer-open,
-html.reddit-mobile-style.rms-drawer-open body {
-    overflow: hidden !important;
-    overscroll-behavior: none !important;
 }
 
 html.reddit-mobile-style .rms-drawer-toggle {
@@ -718,6 +734,27 @@ html.reddit-mobile-style .rms-drawer-close {
         });
 
         backdrop.addEventListener('click', closeDrawers);
+
+        // Do not globally disable page scrolling while a drawer is open.
+        // Instead, let touch gestures inside the fixed drawer scroll it and
+        // suppress only gestures that start outside the drawer.
+        document.addEventListener('touchmove', (event) => {
+            if (!html.classList.contains('rms-drawer-open')) return;
+
+            const left = findLeftDrawer();
+            const right = findRightDrawer();
+            const target = event.target;
+
+            if (
+                (left && left.classList.contains('rms-open') && left.contains(target)) ||
+                (right && right.classList.contains('rms-open') && right.contains(target))
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+        }, { passive: false });
+
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') closeDrawers();
         });
