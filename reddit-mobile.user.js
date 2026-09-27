@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      0.5.0
+// @version      0.6.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://old.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 0.5.0
+ * Reddit Mobile Style 0.6.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -493,8 +493,8 @@ html.reddit-mobile-style .rms-drawer {
     bottom: 0 !important;
     z-index: 2147483001 !important;
     display: block !important;
-    width: min(300px, 88vw) !important;
-    max-width: 88vw !important;
+    width: min(260px, 82vw) !important;
+    max-width: 82vw !important;
     height: 100vh !important;
     max-height: 100vh !important;
     margin: 0 !important;
@@ -502,9 +502,13 @@ html.reddit-mobile-style .rms-drawer {
     overflow-x: hidden !important;
     overflow-y: auto !important;
     box-sizing: border-box !important;
-    background: inherit !important;
+    background: #fff !important;
     transition: transform .18s ease !important;
     overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    scrollbar-width: auto !important;
 }
 
 html.reddit-mobile-style .rms-left-drawer {
@@ -525,6 +529,12 @@ html.reddit-mobile-style .rms-right-drawer {
 
 html.reddit-mobile-style .rms-right-drawer.rms-open {
     transform: translateX(0) !important;
+}
+
+html.reddit-mobile-style.rms-drawer-open,
+html.reddit-mobile-style.rms-drawer-open body {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
 }
 
 html.reddit-mobile-style .rms-drawer-toggle {
@@ -550,6 +560,24 @@ html.reddit-mobile-style .rms-left-toggle {
 
 html.reddit-mobile-style .rms-right-toggle {
     right: 7px !important;
+}
+
+html.reddit-mobile-style .rms-drawer-close {
+    display: block !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    width: 100% !important;
+    min-height: 34px !important;
+    margin: 0 0 10px 0 !important;
+    padding: 5px 8px !important;
+    border: 1px solid rgba(0,0,0,.2) !important;
+    background: #eee !important;
+    color: #333 !important;
+    font: bold 14px/22px sans-serif !important;
+    text-align: right !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
 }
 
 @media (max-width: 380px) {
@@ -623,9 +651,16 @@ html.reddit-mobile-style .rms-right-toggle {
         function closeDrawers() {
             const left = findLeftDrawer();
             const right = findRightDrawer();
-            if (left) left.classList.remove('rms-open', 'rms-left-drawer');
-            if (right) right.classList.remove('rms-open', 'rms-right-drawer');
+
+            if (left) {
+                left.classList.remove('rms-open', 'rms-left-drawer', 'rms-drawer');
+            }
+            if (right) {
+                right.classList.remove('rms-open', 'rms-right-drawer', 'rms-drawer');
+            }
+
             backdrop.classList.remove('rms-open');
+            html.classList.remove('rms-drawer-open');
         }
 
         function openDrawer(element, side) {
@@ -633,10 +668,33 @@ html.reddit-mobile-style .rms-right-toggle {
 
             const isLeft = side === 'left';
             const other = isLeft ? findRightDrawer() : findLeftDrawer();
-            if (other) other.classList.remove('rms-open');
 
-            element.classList.add('rms-drawer', isLeft ? 'rms-left-drawer' : 'rms-right-drawer', 'rms-open');
+            if (other) {
+                other.classList.remove(
+                    'rms-open',
+                    isLeft ? 'rms-right-drawer' : 'rms-left-drawer',
+                    'rms-drawer'
+                );
+            }
+
+            element.classList.add(
+                'rms-drawer',
+                isLeft ? 'rms-left-drawer' : 'rms-right-drawer',
+                'rms-open'
+            );
+
+            if (!element.querySelector('.rms-drawer-close')) {
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'rms-drawer-close';
+                close.textContent = 'Close';
+                close.setAttribute('aria-label', 'Close sidebar');
+                close.addEventListener('click', closeDrawers);
+                element.insertBefore(close, element.firstChild);
+            }
+
             backdrop.classList.add('rms-open');
+            html.classList.add('rms-drawer-open');
         }
 
         leftButton.addEventListener('click', () => {
@@ -671,9 +729,27 @@ html.reddit-mobile-style .rms-right-toggle {
             const right = findRightDrawer();
             if (left && left.classList.contains('rms-open')) {
                 left.classList.add('rms-drawer', 'rms-left-drawer');
+                if (!left.querySelector('.rms-drawer-close')) {
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'rms-drawer-close';
+                    close.textContent = 'Close';
+                    close.setAttribute('aria-label', 'Close sidebar');
+                    close.addEventListener('click', closeDrawers);
+                    left.insertBefore(close, left.firstChild);
+                }
             }
             if (right && right.classList.contains('rms-open')) {
                 right.classList.add('rms-drawer', 'rms-right-drawer');
+                if (!right.querySelector('.rms-drawer-close')) {
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'rms-drawer-close';
+                    close.textContent = 'Close';
+                    close.setAttribute('aria-label', 'Close sidebar');
+                    close.addEventListener('click', closeDrawers);
+                    right.insertBefore(close, right.firstChild);
+                }
             }
         });
 
