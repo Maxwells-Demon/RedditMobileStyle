@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.4.0
+// @version      1.5.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -516,7 +516,9 @@ html.reddit-mobile-style .rms-drawer-backdrop.rms-open {
     display: block !important;
 }
 
-html.reddit-mobile-style .rms-drawer {
+html.reddit-mobile-style .rms-drawer,
+html.reddit-mobile-style .listing-chooser.rms-left-drawer,
+html.reddit-mobile-style .side.rms-right-drawer {
     position: fixed !important;
     top: 0 !important;
     bottom: 0 !important;
@@ -538,7 +540,32 @@ html.reddit-mobile-style .rms-drawer {
     transition: transform .18s ease !important;
     overscroll-behavior: contain !important;
     -webkit-overflow-scrolling: touch !important;
+    touch-action: auto !important;
     box-sizing: border-box !important;
+}
+
+/* Old Reddit's listing chooser has its own collapse/grippy control.
+ * The mobile tray is opened by our button, so the old collapse affordance
+ * must not remain in the touch path. */
+html.reddit-mobile-style .listing-chooser.rms-left-drawer .grippy {
+    display: none !important;
+}
+
+html.reddit-mobile-style .listing-chooser.rms-left-drawer .contents {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+html.reddit-mobile-style .listing-chooser.rms-left-drawer ul {
+    max-width: 100% !important;
+}
+
+html.reddit-mobile-style .listing-chooser.rms-left-drawer li a {
+    display: block !important;
+    min-height: 36px !important;
+    box-sizing: border-box !important;
+    padding: 9px 6px !important;
+    overflow-wrap: anywhere !important;
 }
 
 html.reddit-mobile-style .rms-drawer > * {
@@ -671,9 +698,7 @@ html.reddit-mobile-style .rms-drawer-close {
         document.documentElement.appendChild(rightButton);
 
         function findLeftDrawer() {
-            return document.querySelector(
-                '#siteTable ~ .listing-chooser, .listing-chooser, #RESSubredditGroupDropdown, #srList'
-            );
+            return document.querySelector('div.listing-chooser');
         }
 
         function findRightDrawer() {
@@ -742,14 +767,15 @@ html.reddit-mobile-style .rms-drawer-close {
         backdrop.addEventListener('click', closeDrawers);
 
         // The native listing chooser has a collapse handler on its container.
-        // In the mobile tray that handler must not consume clicks on actual
-        // multireddit links. Stop propagation during capture while preserving
-        // the anchor's normal default navigation.
+        // Stop propagation only for actual chooser links; keep the link's
+        // normal default navigation intact.
         document.addEventListener('click', (event) => {
             const left = findLeftDrawer();
             if (!left || !left.classList.contains('rms-open')) return;
 
-            const link = event.target.closest && event.target.closest('a');
+            const link = event.target.closest && event.target.closest(
+                '.contents a, ul.multis a'
+            );
             if (!link || !left.contains(link)) return;
 
             event.stopPropagation();
@@ -786,27 +812,11 @@ html.reddit-mobile-style .rms-drawer-close {
             const right = findRightDrawer();
             if (left && left.classList.contains('rms-open')) {
                 left.classList.add('rms-drawer', 'rms-left-drawer');
-                if (!left.querySelector('.rms-drawer-close')) {
-                    const close = document.createElement('button');
-                    close.type = 'button';
-                    close.className = 'rms-drawer-close';
-                    close.textContent = 'Close';
-                    close.setAttribute('aria-label', 'Close sidebar');
-                    close.addEventListener('click', closeDrawers);
-                    left.insertBefore(close, left.firstChild);
-                }
+
             }
             if (right && right.classList.contains('rms-open')) {
                 right.classList.add('rms-drawer', 'rms-right-drawer');
-                if (!right.querySelector('.rms-drawer-close')) {
-                    const close = document.createElement('button');
-                    close.type = 'button';
-                    close.className = 'rms-drawer-close';
-                    close.textContent = 'Close';
-                    close.setAttribute('aria-label', 'Close sidebar');
-                    close.addEventListener('click', closeDrawers);
-                    right.insertBefore(close, right.firstChild);
-                }
+
             }
         });
 
@@ -860,5 +870,12 @@ html.reddit-mobile-style .rms-drawer-close {
     setRootClass();
     injectStyle();
     injectPostLayout();
-    installDrawerControls();
+    // The actual Reddit/RES sidebar nodes do not exist reliably at
+    // document-start. Install the controls after the page DOM exists, then
+    // let the observer handle later RES/Reddit mutations.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', installDrawerControls, { once: true });
+    } else {
+        installDrawerControls();
+    }
 })();
