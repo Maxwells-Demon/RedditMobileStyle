@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      0.4.0
+// @version      0.5.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://old.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 0.4.0
+ * Reddit Mobile Style 0.5.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -267,210 +267,419 @@ html.reddit-mobile-style #siteTable {
         style.textContent += `
 /*
  * Stage 2: listing layout.
- * Preserve Reddit's existing DOM and controls; only change geometry.
+ * Match the classic Reddit DOM: .thing contains .rank, .midcol,
+ * .thumbnail and .entry as siblings. Do not turn those into arbitrary
+ * grid rows; that was the cause of ranks/thumbnails appearing below posts.
  */
 
-html.reddit-mobile-style body {
-    overflow-x: hidden;
-}
-
-html.reddit-mobile-style .content {
-    overflow: visible !important;
-}
-
-/* The classic listing itself must not inherit desktop table-like geometry. */
 html.reddit-mobile-style #siteTable {
     display: block !important;
 }
 
-/* One post = vote rail + content. Thumbnail remains inside .entry. */
-html.reddit-mobile-style .thing {
+/* The post number is desktop-only information and wastes scarce width. */
+html.reddit-mobile-style #siteTable > .thing > .rank,
+html.reddit-mobile-style #siteTable > .thing > .rank-spacer,
+html.reddit-mobile-style #siteTable > .thing > .clearleft {
+    display: none !important;
+}
+
+/* vote rail | thumbnail | text */
+html.reddit-mobile-style #siteTable > .thing {
     position: relative !important;
     display: grid !important;
-    grid-template-columns: 42px minmax(0, 1fr) !important;
+    grid-template-columns: 34px 76px minmax(0, 1fr) !important;
+    align-items: start !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
+    overflow: visible !important;
 }
 
-html.reddit-mobile-style .thing > .midcol {
-    grid-column: 1;
-    grid-row: 1;
-    width: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
+html.reddit-mobile-style #siteTable > .thing > .midcol {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+    display: flex !important;
+    flex: none !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 6px 0 !important;
     box-sizing: border-box !important;
-    text-align: center;
+    float: none !important;
 }
 
-html.reddit-mobile-style .thing > .entry {
-    grid-column: 2;
-    grid-row: 1;
+html.reddit-mobile-style #siteTable > .thing > .midcol .arrow {
+    position: relative !important;
+    display: block !important;
+    flex: 0 0 14px !important;
+    width: 15px !important;
+    height: 14px !important;
+    margin: 2px auto !important;
+    padding: 0 !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+/* Preserve Reddit's 15px sprite. Enlarge only the clickable area. */
+html.reddit-mobile-style #siteTable > .thing > .midcol .arrow::after {
+    content: "" !important;
+    position: absolute !important;
+    top: -8px !important;
+    right: -8px !important;
+    bottom: -8px !important;
+    left: -8px !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing > .midcol .score {
+    display: block !important;
+    width: 34px !important;
+    min-height: 14px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 14px !important;
+    text-align: center !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+}
+
+/* Thumbnail is a sibling of .entry in old Reddit, not a child of it. */
+html.reddit-mobile-style #siteTable > .thing > .thumbnail {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+    justify-self: start !important;
+    display: block !important;
+    float: none !important;
+    position: relative !important;
+    width: 68px !important;
+    max-width: 68px !important;
+    min-width: 0 !important;
+    height: 68px !important;
+    max-height: 68px !important;
+    margin: 6px 8px 6px 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing > .thumbnail img {
+    display: block !important;
+    width: 68px !important;
+    max-width: 68px !important;
+    height: 68px !important;
+    max-height: 68px !important;
+    margin: 0 auto !important;
+    object-fit: cover !important;
+}
+
+/* Keep the actual post content in the third grid column. */
+html.reddit-mobile-style #siteTable > .thing > .entry {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    align-self: stretch !important;
     min-width: 0 !important;
     width: auto !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 6px 8px 8px 0 !important;
     box-sizing: border-box !important;
+    float: none !important;
+    overflow: visible !important;
 }
 
-/* Prevent the classic thumbnail float from consuming desktop-sized geometry. */
-html.reddit-mobile-style .thing .thumbnail {
-    float: right !important;
-    width: min(70px, 25vw) !important;
-    max-width: 25vw !important;
-    height: auto !important;
-    max-height: 70px !important;
-    margin: 0 0 4px 8px !important;
+html.reddit-mobile-style #siteTable > .thing > .entry > *,
+html.reddit-mobile-style #siteTable > .thing > .entry .title,
+html.reddit-mobile-style #siteTable > .thing > .entry .tagline,
+html.reddit-mobile-style #siteTable > .thing > .entry .flat-list,
+html.reddit-mobile-style #siteTable > .thing > .entry .expando,
+html.reddit-mobile-style #siteTable > .thing > .entry .md-container {
+    min-width: 0 !important;
+    max-width: 100% !important;
     box-sizing: border-box !important;
 }
 
-html.reddit-mobile-style .thing .thumbnail img {
-    display: block;
-    width: 100% !important;
-    height: auto !important;
-    max-width: 100% !important;
-    object-fit: contain;
+html.reddit-mobile-style #siteTable > .thing .title {
+    display: block !important;
+    line-height: 1.25 !important;
+    overflow-wrap: anywhere !important;
 }
 
-/* Text columns must be allowed to shrink rather than force page overflow. */
-html.reddit-mobile-style .thing .entry > *,
-html.reddit-mobile-style .thing .entry .title,
-html.reddit-mobile-style .thing .entry .tagline,
-html.reddit-mobile-style .thing .entry .flat-list,
-html.reddit-mobile-style .thing .entry .expando,
-html.reddit-mobile-style .thing .entry .md-container {
+html.reddit-mobile-style #siteTable > .thing .domain {
+    overflow-wrap: anywhere !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing .tagline {
+    line-height: 1.35 !important;
+    overflow-wrap: anywhere !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing .flat-list {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0 7px !important;
+    line-height: 1.5 !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing .flat-list li {
+    float: none !important;
+    display: inline-block !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    box-sizing: border-box;
-}
-
-html.reddit-mobile-style .thing .title {
-    display: block;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-}
-
-html.reddit-mobile-style .thing .domain {
-    overflow-wrap: anywhere;
-}
-
-html.reddit-mobile-style .thing .tagline {
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-}
-
-html.reddit-mobile-style .thing .flat-list {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 0 7px;
-    line-height: 1.5;
-}
-
-html.reddit-mobile-style .thing .flat-list li {
-    float: none !important;
-    display: inline-block;
-}
-
-/* Vote controls are small in the original CSS; enlarge the hit target
- * without changing the underlying links or RES vote behavior. */
-html.reddit-mobile-style .thing .midcol .arrow {
-    display: block;
-    margin: 0 auto !important;
-    width: 32px !important;
-    height: 30px !important;
-    background-position-x: center !important;
-}
-
-html.reddit-mobile-style .thing .midcol .score {
-    display: block;
-    width: 42px;
-    line-height: 16px;
-    text-align: center;
 }
 
 /* Expandos/media must respect the phone content column. */
-html.reddit-mobile-style .thing .expando,
-html.reddit-mobile-style .thing .expando-content,
-html.reddit-mobile-style .thing .media-preview,
-html.reddit-mobile-style .thing .media-preview-content,
-html.reddit-mobile-style .thing iframe,
-html.reddit-mobile-style .thing video,
-html.reddit-mobile-style .thing object,
-html.reddit-mobile-style .thing embed {
+html.reddit-mobile-style #siteTable > .thing .expando,
+html.reddit-mobile-style #siteTable > .thing .expando-content,
+html.reddit-mobile-style #siteTable > .thing .media-preview,
+html.reddit-mobile-style #siteTable > .thing .media-preview-content,
+html.reddit-mobile-style #siteTable > .thing iframe,
+html.reddit-mobile-style #siteTable > .thing video,
+html.reddit-mobile-style #siteTable > .thing object,
+html.reddit-mobile-style #siteTable > .thing embed {
     max-width: 100% !important;
     box-sizing: border-box !important;
 }
 
-html.reddit-mobile-style .thing .md {
+html.reddit-mobile-style #siteTable > .thing .md {
     max-width: 100% !important;
-    overflow-wrap: anywhere;
+    overflow-wrap: anywhere !important;
 }
 
-html.reddit-mobile-style .thing .md pre,
-html.reddit-mobile-style .thing .md table {
+html.reddit-mobile-style #siteTable > .thing .md pre {
     max-width: 100% !important;
-    overflow-x: auto;
+    white-space: pre !important;
+    overflow-x: auto !important;
 }
 
-html.reddit-mobile-style .thing .md pre {
-    white-space: pre;
-    overflow-x: auto;
+html.reddit-mobile-style #siteTable > .thing .md table {
+    max-width: 100% !important;
+    overflow-x: auto !important;
 }
 
-html.reddit-mobile-style .thing .md table {
-    display: block;
-    width: max-content;
-}
-
-/* Keep RES-selected rows visible without reintroducing desktop width. */
 html.reddit-mobile-style .res-selected {
     min-width: 0 !important;
     max-width: 100% !important;
 }
 
-/* Listing separators remain useful, but never depend on a fixed canvas. */
-html.reddit-mobile-style .thing {
-    border-right: 0 !important;
+/* Mobile drawers for the two side areas. */
+html.reddit-mobile-style .rms-drawer-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483000 !important;
+    display: none !important;
+    background: rgba(0, 0, 0, .28) !important;
 }
 
-/* "next" and pagination should occupy the same fluid column. */
-html.reddit-mobile-style .nav-buttons,
-html.reddit-mobile-style .nextprev {
-    max-width: 100% !important;
-    box-sizing: border-box;
-    overflow-wrap: anywhere;
+html.reddit-mobile-style .rms-drawer-backdrop.rms-open {
+    display: block !important;
 }
 
-/* Narrow phones: slightly reduce the vote rail and thumbnail. */
+html.reddit-mobile-style .rms-drawer {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    z-index: 2147483001 !important;
+    display: block !important;
+    width: min(300px, 88vw) !important;
+    max-width: 88vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+    background: inherit !important;
+    transition: transform .18s ease !important;
+    overscroll-behavior: contain !important;
+}
+
+html.reddit-mobile-style .rms-left-drawer {
+    left: 0 !important;
+    right: auto !important;
+    transform: translateX(-105%) !important;
+}
+
+html.reddit-mobile-style .rms-left-drawer.rms-open {
+    transform: translateX(0) !important;
+}
+
+html.reddit-mobile-style .rms-right-drawer {
+    right: 0 !important;
+    left: auto !important;
+    transform: translateX(105%) !important;
+}
+
+html.reddit-mobile-style .rms-right-drawer.rms-open {
+    transform: translateX(0) !important;
+}
+
+html.reddit-mobile-style .rms-drawer-toggle {
+    position: fixed !important;
+    top: 7px !important;
+    z-index: 2147483002 !important;
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(0,0,0,.25) !important;
+    border-radius: 3px !important;
+    background: #fff !important;
+    color: #555 !important;
+    font: bold 20px/32px sans-serif !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style .rms-left-toggle {
+    left: 7px !important;
+}
+
+html.reddit-mobile-style .rms-right-toggle {
+    right: 7px !important;
+}
+
 @media (max-width: 380px) {
-    html.reddit-mobile-style .thing {
-        grid-template-columns: 38px minmax(0, 1fr) !important;
+    html.reddit-mobile-style #siteTable > .thing {
+        grid-template-columns: 32px 64px minmax(0, 1fr) !important;
     }
 
-    html.reddit-mobile-style .thing > .midcol {
-        width: 38px !important;
-        min-width: 38px !important;
-        max-width: 38px !important;
+    html.reddit-mobile-style #siteTable > .thing > .midcol {
+        width: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
     }
 
-    html.reddit-mobile-style .thing .midcol .score {
-        width: 38px;
+    html.reddit-mobile-style #siteTable > .thing > .midcol .score {
+        width: 32px !important;
     }
 
-    html.reddit-mobile-style .thing .thumbnail {
-        width: 62px !important;
-        max-width: 62px !important;
-        max-height: 62px !important;
+    html.reddit-mobile-style #siteTable > .thing > .thumbnail {
+        width: 56px !important;
+        max-width: 56px !important;
+        height: 56px !important;
+        max-height: 56px !important;
+    }
+
+    html.reddit-mobile-style #siteTable > .thing > .thumbnail img {
+        width: 56px !important;
+        max-width: 56px !important;
+        height: 56px !important;
+        max-height: 56px !important;
     }
 }
         `;
     }
+
+    function installDrawerControls() {
+        if (document.getElementById('rms-left-toggle')) return;
+
+        const html = document.documentElement;
+
+        const backdrop = document.createElement('div');
+        backdrop.id = 'rms-drawer-backdrop';
+        backdrop.className = 'rms-drawer-backdrop';
+        document.documentElement.appendChild(backdrop);
+
+        const leftButton = document.createElement('button');
+        leftButton.id = 'rms-left-toggle';
+        leftButton.className = 'rms-drawer-toggle rms-left-toggle';
+        leftButton.type = 'button';
+        leftButton.setAttribute('aria-label', 'Toggle multireddit menu');
+        leftButton.textContent = '☰';
+        document.documentElement.appendChild(leftButton);
+
+        const rightButton = document.createElement('button');
+        rightButton.id = 'rms-right-toggle';
+        rightButton.className = 'rms-drawer-toggle rms-right-toggle';
+        rightButton.type = 'button';
+        rightButton.setAttribute('aria-label', 'Toggle Reddit sidebar');
+        rightButton.textContent = '▤';
+        document.documentElement.appendChild(rightButton);
+
+        function findLeftDrawer() {
+            return document.querySelector(
+                '#siteTable ~ .listing-chooser, .listing-chooser, #RESSubredditGroupDropdown, #srList'
+            );
+        }
+
+        function findRightDrawer() {
+            return document.querySelector('.side');
+        }
+
+        function closeDrawers() {
+            const left = findLeftDrawer();
+            const right = findRightDrawer();
+            if (left) left.classList.remove('rms-open', 'rms-left-drawer');
+            if (right) right.classList.remove('rms-open', 'rms-right-drawer');
+            backdrop.classList.remove('rms-open');
+        }
+
+        function openDrawer(element, side) {
+            if (!element) return;
+
+            const isLeft = side === 'left';
+            const other = isLeft ? findRightDrawer() : findLeftDrawer();
+            if (other) other.classList.remove('rms-open');
+
+            element.classList.add('rms-drawer', isLeft ? 'rms-left-drawer' : 'rms-right-drawer', 'rms-open');
+            backdrop.classList.add('rms-open');
+        }
+
+        leftButton.addEventListener('click', () => {
+            const left = findLeftDrawer();
+            if (!left) return;
+            if (left.classList.contains('rms-open')) {
+                closeDrawers();
+            } else {
+                openDrawer(left, 'left');
+            }
+        });
+
+        rightButton.addEventListener('click', () => {
+            const right = findRightDrawer();
+            if (!right) return;
+            if (right.classList.contains('rms-open')) {
+                closeDrawers();
+            } else {
+                openDrawer(right, 'right');
+            }
+        });
+
+        backdrop.addEventListener('click', closeDrawers);
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeDrawers();
+        });
+
+        // RES/Reddit can recreate the chooser/sidebar. Reapply drawer classes
+        // when they appear without touching their contents.
+        const observer = new MutationObserver(() => {
+            const left = findLeftDrawer();
+            const right = findRightDrawer();
+            if (left && left.classList.contains('rms-open')) {
+                left.classList.add('rms-drawer', 'rms-left-drawer');
+            }
+            if (right && right.classList.contains('rms-open')) {
+                right.classList.add('rms-drawer', 'rms-right-drawer');
+            }
+        });
+
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
 
     function setRootClass() {
         const html = document.documentElement;
@@ -498,4 +707,5 @@ html.reddit-mobile-style .nextprev {
     setRootClass();
     injectStyle();
     injectPostLayout();
+    installDrawerControls();
 })();
