@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.2.0
+// @version      1.3.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -529,45 +529,21 @@ html.reddit-mobile-style .rms-drawer {
     max-height: 100vh !important;
     max-height: 100dvh !important;
     margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
+    padding: 8px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     box-sizing: border-box !important;
     pointer-events: auto !important;
     background: #e1e1e1 !important;
     transition: transform .18s ease !important;
-}
-
-html.reddit-mobile-style .rms-drawer-content {
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    height: 100% !important;
-    max-height: none !important;
-    margin: 0 !important;
-    padding: 8px !important;
-    box-sizing: border-box !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
     overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
 }
 
-html.reddit-mobile-style .rms-drawer-content > * {
+html.reddit-mobile-style .rms-drawer > * {
     touch-action: pan-y !important;
-}
-
-html.reddit-mobile-style .rms-left-drawer > .rms-drawer-content {
-    max-width: 100% !important;
-}
-
-html.reddit-mobile-style .rms-left-drawer .rms-drawer-content {
-    background: #e1e1e1 !important;
-}
-
-html.reddit-mobile-style .rms-right-drawer .rms-drawer-content {
-    background: #e1e1e1 !important;
+    box-sizing: border-box !important;
 }
 
 html.reddit-mobile-style .rms-left-drawer {
@@ -705,45 +681,6 @@ html.reddit-mobile-style .rms-drawer-close {
             return document.querySelector('.side');
         }
 
-        function makeDrawerScrollable(shell) {
-            if (shell.dataset.rmsTouchScroll === '1') return;
-            shell.dataset.rmsTouchScroll = '1';
-
-            // Reddit/RES installs legacy touch handlers on document/body.
-            // Do not depend on native overflow scrolling winning that event
-            // arbitration. Drive the drawer's scrollTop directly from the
-            // finger gesture.
-            let dragging = false;
-            let lastY = 0;
-
-            shell.addEventListener('touchstart', (event) => {
-                if (event.touches.length !== 1) return;
-                dragging = true;
-                lastY = event.touches[0].clientY;
-            }, { passive: true });
-
-            shell.addEventListener('touchmove', (event) => {
-                if (!dragging || event.touches.length !== 1) return;
-
-                const y = event.touches[0].clientY;
-                const delta = lastY - y;
-                lastY = y;
-
-                if (delta !== 0) {
-                    shell.scrollTop += delta;
-                    event.preventDefault();
-                }
-            }, { passive: false });
-
-            shell.addEventListener('touchend', () => {
-                dragging = false;
-            }, { passive: true });
-
-            shell.addEventListener('touchcancel', () => {
-                dragging = false;
-            }, { passive: true });
-        }
-
         function closeDrawers() {
             const left = findLeftDrawer();
             const right = findRightDrawer();
@@ -778,32 +715,6 @@ html.reddit-mobile-style .rms-drawer-close {
                 isLeft ? 'rms-left-drawer' : 'rms-right-drawer',
                 'rms-open'
             );
-
-            // Do not rely on the old Reddit/RES sidebar element itself as the
-            // scroll container. Those elements can have their own fixed
-            // heights/overflow rules. Put the live sidebar in a dedicated
-            // fixed-height scrolling viewport instead.
-            let shell = element.querySelector(':scope > .rms-drawer-content');
-            if (!shell) {
-                shell = document.createElement('div');
-                shell.className = 'rms-drawer-content';
-                while (element.firstChild) {
-                    shell.appendChild(element.firstChild);
-                }
-                element.appendChild(shell);
-            }
-
-            makeDrawerScrollable(shell);
-
-            if (!shell.querySelector('.rms-drawer-close')) {
-                const close = document.createElement('button');
-                close.type = 'button';
-                close.className = 'rms-drawer-close';
-                close.textContent = 'Close';
-                close.setAttribute('aria-label', 'Close sidebar');
-                close.addEventListener('click', closeDrawers);
-                shell.insertBefore(close, shell.firstChild);
-            }
 
             backdrop.classList.add('rms-open');
             html.classList.add('rms-drawer-open');
@@ -862,34 +773,26 @@ html.reddit-mobile-style .rms-drawer-close {
             const right = findRightDrawer();
             if (left && left.classList.contains('rms-open')) {
                 left.classList.add('rms-drawer', 'rms-left-drawer');
-                const shell = left.querySelector(':scope > .rms-drawer-content');
-                if (shell) {
-                    makeDrawerScrollable(shell);
-                    if (!shell.querySelector('.rms-drawer-close')) {
-                        const close = document.createElement('button');
-                        close.type = 'button';
-                        close.className = 'rms-drawer-close';
-                        close.textContent = 'Close';
-                        close.setAttribute('aria-label', 'Close sidebar');
-                        close.addEventListener('click', closeDrawers);
-                        shell.insertBefore(close, shell.firstChild);
-                    }
+                if (!left.querySelector('.rms-drawer-close')) {
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'rms-drawer-close';
+                    close.textContent = 'Close';
+                    close.setAttribute('aria-label', 'Close sidebar');
+                    close.addEventListener('click', closeDrawers);
+                    left.insertBefore(close, left.firstChild);
                 }
             }
             if (right && right.classList.contains('rms-open')) {
                 right.classList.add('rms-drawer', 'rms-right-drawer');
-                const shell = right.querySelector(':scope > .rms-drawer-content');
-                if (shell) {
-                    makeDrawerScrollable(shell);
-                    if (!shell.querySelector('.rms-drawer-close')) {
-                        const close = document.createElement('button');
-                        close.type = 'button';
-                        close.className = 'rms-drawer-close';
-                        close.textContent = 'Close';
-                        close.setAttribute('aria-label', 'Close sidebar');
-                        close.addEventListener('click', closeDrawers);
-                        shell.insertBefore(close, shell.firstChild);
-                    }
+                if (!right.querySelector('.rms-drawer-close')) {
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'rms-drawer-close';
+                    close.textContent = 'Close';
+                    close.setAttribute('aria-label', 'Close sidebar');
+                    close.addEventListener('click', closeDrawers);
+                    right.insertBefore(close, right.firstChild);
                 }
             }
         });
