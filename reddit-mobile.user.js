@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.6.0
+// @version      1.7.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -671,20 +671,32 @@ html.reddit-mobile-style .rms-drawer-close {
         `;
     }
 
-    // Install this guard at document-start. Reddit/RES may attach the native
-    // listing-chooser collapse handler before DOMContentLoaded; installing our
-    // handler later means the native capture/bubble handler can win and close
-    // the tray before the mobile drawer code ever sees the click.
-    document.addEventListener('click', (event) => {
+    // The native listing chooser is an interactive desktop widget. On mobile
+    // we use it as a drawer, so native chooser handlers must not be allowed to
+    // collapse it while it is open. This is installed at document-start and
+    // covers the event types used by old Reddit/RES (mouse, touch, pointer).
+    const drawerEventGuard = (event) => {
         const chooser = document.querySelector('div.listing-chooser');
-        if (!chooser) return;
-        if (!chooser.classList.contains('rms-open')) return;
+        if (!chooser || !chooser.classList.contains('rms-open')) return;
         if (!chooser.contains(event.target)) return;
 
-        // Do not cancel the anchor's default action. This only prevents the
-        // chooser's own document/container handlers from collapsing the tray.
-        event.stopPropagation();
-    }, true);
+        // Keep ordinary links usable: cancel propagation, not the browser's
+        // default navigation. Non-link controls are completely isolated from
+        // the native chooser event system so the drawer can be inspected.
+        const anchor = event.target.closest && event.target.closest('a');
+        if (anchor && chooser.contains(anchor)) {
+            event.stopImmediatePropagation();
+            return;
+        }
+
+        event.stopImmediatePropagation();
+        if (event.type !== 'click') {
+            event.preventDefault();
+        }
+    };
+
+    ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'click']
+        .forEach((type) => document.addEventListener(type, drawerEventGuard, true));
 
     function installDrawerControls() {
         if (document.getElementById('rms-left-toggle')) return;
@@ -720,7 +732,16 @@ html.reddit-mobile-style .rms-drawer-close {
             return document.querySelector('.side');
         }
 
+        // Keep drawer state outside the Reddit/RES DOM. The native chooser is
+        // allowed to mutate its own classes, so class presence alone cannot be
+        // our source of truth for whether the mobile drawer is open.
+        let leftDrawerOpen = false;
+        let rightDrawerOpen = false;
+
         function closeDrawers() {
+            leftDrawerOpen = false;
+            rightDrawerOpen = false;
+
             const left = findLeftDrawer();
             const right = findRightDrawer();
 
@@ -740,6 +761,9 @@ html.reddit-mobile-style .rms-drawer-close {
 
             const isLeft = side === 'left';
             const other = isLeft ? findRightDrawer() : findLeftDrawer();
+
+            leftDrawerOpen = isLeft;
+            rightDrawerOpen = !isLeft;
 
             if (other) {
                 other.classList.remove(
@@ -810,13 +834,13 @@ html.reddit-mobile-style .rms-drawer-close {
         const observer = new MutationObserver(() => {
             const left = findLeftDrawer();
             const right = findRightDrawer();
-            if (left && left.classList.contains('rms-open')) {
-                left.classList.add('rms-drawer', 'rms-left-drawer');
 
+            if (leftDrawerOpen && left) {
+                left.classList.add('rms-drawer', 'rms-left-drawer', 'rms-open');
             }
-            if (right && right.classList.contains('rms-open')) {
-                right.classList.add('rms-drawer', 'rms-right-drawer');
 
+            if (rightDrawerOpen && right) {
+                right.classList.add('rms-drawer', 'rms-right-drawer', 'rms-open');
             }
         });
 
