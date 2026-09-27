@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.5.0
+// @version      1.6.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -671,6 +671,21 @@ html.reddit-mobile-style .rms-drawer-close {
         `;
     }
 
+    // Install this guard at document-start. Reddit/RES may attach the native
+    // listing-chooser collapse handler before DOMContentLoaded; installing our
+    // handler later means the native capture/bubble handler can win and close
+    // the tray before the mobile drawer code ever sees the click.
+    document.addEventListener('click', (event) => {
+        const chooser = document.querySelector('div.listing-chooser');
+        if (!chooser) return;
+        if (!chooser.classList.contains('rms-open')) return;
+        if (!chooser.contains(event.target)) return;
+
+        // Do not cancel the anchor's default action. This only prevents the
+        // chooser's own document/container handlers from collapsing the tray.
+        event.stopPropagation();
+    }, true);
+
     function installDrawerControls() {
         if (document.getElementById('rms-left-toggle')) return;
 
@@ -765,21 +780,6 @@ html.reddit-mobile-style .rms-drawer-close {
         });
 
         backdrop.addEventListener('click', closeDrawers);
-
-        // The native listing chooser has a collapse handler on its container.
-        // Stop propagation only for actual chooser links; keep the link's
-        // normal default navigation intact.
-        document.addEventListener('click', (event) => {
-            const left = findLeftDrawer();
-            if (!left || !left.classList.contains('rms-open')) return;
-
-            const link = event.target.closest && event.target.closest(
-                '.contents a, ul.multis a'
-            );
-            if (!link || !left.contains(link)) return;
-
-            event.stopPropagation();
-        }, true);
 
         // Do not globally disable page scrolling while a drawer is open.
         // Instead, let touch gestures inside the fixed drawer scroll it and
