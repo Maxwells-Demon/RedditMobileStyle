@@ -818,19 +818,78 @@ In particular, the publicly available "Old Reddit Mobile Layout" userscript demo
 
 Its implementation should be independently designed for this repository and validated against the exact Reddit/RES DOM being targeted.
 
-## 24. Immediate next implementation task
+## 24. Revised implementation plan
 
-Before writing the userscript itself:
+The live old Reddit page confirms that the classic shell and listing selectors remain in use. The current rendered document exposes the familiar subreddit bar, header/navigation, search/sidebar controls, `.content`, `#siteTable`, `.thing`, vote controls, thumbnails, entry metadata, action links, and expandos. The captured `base.html` independently confirms the critical `<meta name="viewport" content="width=1024">` declaration.
 
-1. Inspect the live old Reddit DOM corresponding to the captured base.html.
-2. Record the exact desktop geometry and selectors for the header, content wrapper, sidebar, site table, post, vote column, thumbnail, entry, and action rows.
-3. Create a minimal userscript that only:
-   - fixes the viewport;
-   - detects mobile;
-   - injects the root mobile class;
-   - makes the page/content/sidebar full-width.
-4. Verify that this removes the screenshot's 1024px scaling problem.
-5. Then implement the post/grid rules incrementally, testing after each structural change.
-6. Keep each stage small enough that regressions can be attributed to one CSS group.
+The implementation will therefore proceed in two controlled stages.
 
-The key implementation constraint is that base.html documents the head-level cause and dependencies, but not the actual listing DOM. The live body must therefore be treated as the authoritative source for final selectors before the userscript is written.
+### Stage 1 — shell correction
+
+The first userscript revision will do only the minimum structural work required to stop the phone from rendering a scaled desktop canvas:
+
+1. Detect a mobile/touch phone **before** trusting `innerWidth`.
+2. Change the viewport to `width=device-width, initial-scale=1, viewport-fit=cover`.
+3. Add `html.reddit-mobile-style`.
+4. Inject one namespaced stylesheet.
+5. Remove desktop `min-width`/fixed-width assumptions from the page shell.
+6. Make `.content` and `#siteTable` fluid.
+7. Hide `.side` without deleting it.
+8. Normalize the classic header and subreddit navigation into normal flow.
+9. Prevent ordinary page-level horizontal overflow.
+10. Leave post internals mostly untouched.
+
+This stage gives us a clean baseline and makes subsequent regressions attributable to post-layout rules rather than the original 1024px viewport.
+
+### Stage 2 — post reflow
+
+Once Stage 1 is verified on a real phone:
+
+1. Reflow each `.thing` using CSS Grid.
+2. Preserve the existing `.midcol`, `.entry`, and `.thumbnail` DOM nodes.
+3. Make titles, taglines, domains, and action links wrap naturally.
+4. Enlarge vote/action hit areas without replacing Reddit controls.
+5. Make thumbnails responsive.
+6. Constrain expandos, images, videos, iframes, Markdown, tables, and code.
+7. Add targeted RES compatibility rules.
+8. Add narrowly scoped protection against recurring subreddit-CSS geometry overrides.
+
+### Important correction to the earlier plan
+
+Do **not** make the first script responsible for the complete mobile design. In particular, do not immediately convert every post to a grid or add JavaScript DOM manipulation. The live page confirms the classic selectors, but the correct computed geometry must be measured on the user's actual Android/RES setup.
+
+The first implementation is intentionally a shell-only baseline. The next iteration should be driven by screenshots and measurements from that baseline.
+
+### Current live-DOM evidence
+
+The public old Reddit page currently exposes:
+
+- subreddit navigation at the top;
+- the classic sort tabs;
+- search and submit controls;
+- a listing with numbered `.thing` posts;
+- post title/domain/subreddit metadata;
+- comments/save/hide/report action links;
+- thumbnails and video links;
+- the standard next-page navigation.
+
+This confirms the selector family already documented above and means no replacement frontend is necessary.
+
+## 25. First implementation target
+
+Create:
+
+    reddit-mobile.user.js
+
+Version it as `0.1.0`.
+
+The initial script must be directly installable in Tampermonkey, use no privileged grants, and remain inert on desktop browsers.
+
+The next development cycle should be:
+
+1. Install Stage 1 on the target Android browser with RES.
+2. Capture a portrait screenshot.
+3. Record `document.documentElement.clientWidth`, `window.innerWidth`, `#header`, `.content`, `.side`, and `#siteTable` bounding rectangles.
+4. Identify remaining horizontal overflow sources.
+5. Use those measurements to implement Stage 2 post-grid rules.
+
