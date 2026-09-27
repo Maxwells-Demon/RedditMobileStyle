@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.9.1
+// @version      1.10.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -240,56 +240,49 @@ html.reddit-mobile-style .rms-left-toggle { left: 7px !important; }
 html.reddit-mobile-style .rms-right-toggle { right: 7px !important; }
 
 html.reddit-mobile-style .listing-chooser.rms-left-drawer {
-    position: fixed !important;
+    position: absolute !important;
     top: 0 !important;
-    bottom: 0 !important;
     left: 0 !important;
     width: min(220px, 68vw) !important;
     max-width: 68vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     margin: 0 !important;
     padding: 8px !important;
     box-sizing: border-box !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: contain !important;
-    touch-action: pan-y !important;
-    min-height: 0 !important;
-    max-height: none !important;
+    overflow: visible !important;
     z-index: 2147483001 !important;
     background: #e1e1e1 !important;
-    transform: translateX(-105%) !important;
-    transition: transform .18s ease !important;
+    transform: none !important;
 }
+
 html.reddit-mobile-style .listing-chooser.rms-left-drawer.rms-open {
-    transform: translateX(0) !important;
+    transform: none !important;
 }
 
 html.reddit-mobile-style .side.rms-right-drawer {
     display: block !important;
-    position: fixed !important;
+    position: absolute !important;
     top: 0 !important;
-    bottom: 0 !important;
     right: 0 !important;
     left: auto !important;
     width: min(340px, 92vw) !important;
     max-width: 92vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     margin: 0 !important;
     padding: 8px !important;
     box-sizing: border-box !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow: visible !important;
     z-index: 2147483001 !important;
     background: #e1e1e1 !important;
-    transform: translateX(105%) !important;
-    transition: transform .18s ease !important;
+    transform: none !important;
 }
+
 html.reddit-mobile-style .side.rms-right-drawer.rms-open {
-    transform: translateX(0) !important;
+    transform: none !important;
 }
 
 html.reddit-mobile-style #siteTable {
@@ -620,12 +613,6 @@ html.reddit-mobile-style .side {
 
         const html = document.documentElement;
 
-        const backdrop = document.createElement('div');
-        backdrop.className = 'rms-drawer-backdrop';
-        backdrop.style.cssText =
-            'position:fixed;inset:0;z-index:2147483000;display:none;background:rgba(0,0,0,.28);';
-        document.documentElement.appendChild(backdrop);
-
         const leftButton = document.createElement('button');
         leftButton.id = 'rms-left-toggle';
         leftButton.className = 'rms-drawer-toggle rms-left-toggle';
@@ -649,7 +636,6 @@ html.reddit-mobile-style .side {
             const l = left(), r = right();
             if (l) l.classList.remove('rms-open', 'rms-left-drawer');
             if (r) r.classList.remove('rms-open', 'rms-right-drawer');
-            backdrop.style.display = 'none';
             html.classList.remove('rms-drawer-open');
         }
 
@@ -661,7 +647,6 @@ html.reddit-mobile-style .side {
                 'rms-open',
                 which === 'left' ? 'rms-left-drawer' : 'rms-right-drawer'
             );
-            backdrop.style.display = 'block';
             html.classList.add('rms-drawer-open');
         }
 
@@ -677,7 +662,6 @@ html.reddit-mobile-style .side {
             else open('right');
         });
 
-        backdrop.addEventListener('click', close);
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape') close();
         });
