@@ -569,6 +569,49 @@ html.reddit-mobile-style .res-selected {
 }
 
 /*
+ * Post-detail pages use the same #siteTable > .thing structure as listings.
+ * The listing grid above otherwise reserves only its third column for the
+ * post body, leaving self-text and expanded post content at roughly half width.
+ * Restore a full-width block layout for the primary post on detail pages.
+ */
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link,
+html.reddit-mobile-style body.with-listing-chooser.comments-page #siteTable > .thing.link {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+}
+
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link > .entry,
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link > .expando,
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link .expando-content,
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link .usertext-body,
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link .md-container,
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link .md {
+    display: block !important;
+    float: none !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link > .entry {
+    padding: 6px 8px !important;
+}
+
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link .expando,
+html.reddit-mobile-style body.comments-page #siteTable > .thing.link .expando-content {
+    overflow: visible !important;
+}
+
+/*
  * Full-width post pages, self-text, and comments.
  * Old Reddit applies desktop widths/margins to .sitetable, .thing, .entry,
  * .commentarea and .usertext-body. Remove those constraints without flattening
