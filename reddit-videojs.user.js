@@ -183,6 +183,8 @@
     }
 
     function inHiddenOrThumbnail(el) {
+        // Reddit-specific exclusions must not suppress players on other websites.
+        if (!/(^|\\.)reddit\\.com$/i.test(location.hostname)) return false;
         if (el.closest('.thumbnail, .thing .midcol, .listing-chooser, #header, #sr-header-area')) return true;
         if (settings.scanCollapsedPosts) return false;
         const thing = el.closest('.thing');
@@ -228,25 +230,34 @@
 
     function collectSources(video) {
         const sources = [];
-        const add = (raw, type) => {
-            const normalized = normalizeMediaUrl(raw);
-            if (normalized && !sources.some(s => s.src === normalized)) {
-                sources.push({ src: normalized, type: type || inferType(normalized) });
+        const addExistingMediaSource = (raw, type) => {
+            if (!raw) return;
+            let resolved;
+            try { resolved = new URL(raw, location.href); } catch (_) { return; }
+            // Blob URLs are often used by MediaSource-based players. Preserve them
+            // when re-wrapping an existing video in the same document.
+            if (resolved.protocol === 'blob:') {
+                const src = resolved.href;
+                if (!sources.some(s => s.src === src)) sources.push({ src, type: type || 'video/mp4' });
+                return;
             }
+            if (!/^https?:$/.test(resolved.protocol)) return;
+            const src = normalizeMediaUrl(resolved.href) || resolved.href;
+            if (!sources.some(s => s.src === src)) sources.push({ src, type: type || inferType(src) });
         };
-        add(video.currentSrc);
-        add(video.getAttribute('src'));
-        video.querySelectorAll('source[src]').forEach(source => add(source.src, source.type));
+        addExistingMediaSource(video.currentSrc);
+        addExistingMediaSource(video.getAttribute('src'));
+        video.querySelectorAll('source[src]').forEach(source => addExistingMediaSource(source.src, source.type));
 
-        const candidates = [
-            'data-video-url', 'data-url', 'data-hls-url', 'data-playback-url',
-            'data-mp4', 'data-source', 'data-src', 'src'
-        ];
+        // Custom players often expose a stream URL in data attributes.
+        const candidates = ['data-video-url', 'data-playback-url', 'data-hls-url', 'data-mp4', 'data-source', 'data-src', 'data-url'];
         for (const attr of candidates) {
             const raw = video.getAttribute(attr);
-            if (raw) add(raw);
+            if (!raw) continue;
+            const normalized = normalizeMediaUrl(raw);
+            if (normalized && !sources.some(s => s.src === normalized)) sources.push({ src: normalized, type: inferType(normalized) });
         }
-        const parent = video.closest('.expando, .media-preview, .media-embed, .reddit-video-player, .res-media') || video.parentElement;
+        const parent = video.closest('.expando, .media-preview, .media-embed, .video-wrapper, .video-container, .reddit-video-player, .res-media') || video.parentElement;
         if (parent) {
             parent.querySelectorAll('a[href]').forEach(a => {
                 const s = normalizeMediaUrl(a.href);
@@ -307,15 +318,18 @@
                     player.src(sources.slice(idx + 1));
                     return;
                 }
-                if (original && original.parentNode) {
+                if (original && shell.parentNode) {
+                    original.hidden = false;
                     shell.replaceWith(original);
                 } else {
-                    showSourceError(shell, 'Video.js could not play this source. The original host/player may require a site-specific decoder or authentication.');
+                    showSourceError(shell, 'Video.js could not play this source. The original host/player may require a site-specific decoder, authentication, DRM, or a site-specific playback engine.');
                 }
             });
         } catch (error) {
-            if (original && shell.parentNode) shell.replaceWith(original);
-            else showSourceError(shell, 'Video.js could not initialize: ' + String(error && error.message || error));
+            if (original && shell.parentNode) {
+                original.hidden = false;
+                shell.replaceWith(original);
+            } else showSourceError(shell, 'Video.js could not initialize: ' + String(error && error.message || error));
         }
     }
 
@@ -336,14 +350,12 @@
         });
     }
 
-    function findRedditVideoUrl(el) {
+    function findPlayableMediaUrl(el) {
         const candidates = [];
-        const add = value => {
-            if (value && !candidates.includes(value)) candidates.push(value);
-        };
-        const nodes = [el, ...Array.from(el.querySelectorAll('[src], [href], [data-url], [data-video-url], [data-hls-url]'))];
+        const add = value => { if (value && !candidates.includes(value)) candidates.push(value); };
+        const nodes = [el, ...Array.from(el.querySelectorAll('[src], [href], [data], [data-url], [data-media-url], [data-video-url], [data-playback-url], [data-hls-url], [data-mp4]'))];
         nodes.forEach(node => {
-            ['src', 'href', 'data-url', 'data-video-url', 'data-hls-url', 'data-mp4', 'data-source'].forEach(attr => add(node.getAttribute && node.getAttribute(attr)));
+            ['src', 'href', 'data', 'data-url', 'data-media-url', 'data-video-url', 'data-playback-url', 'data-hls-url', 'data-mp4', 'data-source'].forEach(attr => add(node.getAttribute && node.getAttribute(attr)));
         });
         for (const candidate of candidates) {
             const normalized = normalizeMediaUrl(candidate);
@@ -375,35 +387,40 @@
         });
     }
 
-    function replaceRedditEmbedWrappers() {
-        if (!settings.replaceRedditEmbeds) return;
-        const selector = '.expando, .media-preview, .media-preview-content, .media-embed, .reddit-video-player, .res-media';
-        document.querySelectorAll(selector + ':not([data-rms-vjs-embed-scanned])').forEach(wrapper => {
-            wrapper.dataset.rmsVjsEmbedScanned = '1';
+    function replaceEmbedWrappers() {
+        if (!settings.replaceEmbeds) return;
+        const selector = 'iframe[src], object[data], embed[src], .expando, .media-preview, .media-preview-content, .media-embed, .video-wrapper, .video-container, .reddit-video-player, .res-media, [data-video-url], [data-media-url]';
+        document.querySelectorAll(selector).forEach(wrapper => {
+            if (wrapper.dataset.rmsVjsEmbedScanned === '1') return;
             if (inHiddenOrThumbnail(wrapper)) return;
-            if (wrapper.querySelector('video[data-rms-vjs-ready], .rms-vjs-shell')) return;
-            const iframe = wrapper.querySelector('iframe');
-            const url = findRedditVideoUrl(wrapper);
-            if (url && /v\.redd\.it/i.test(url)) {
-                const video = document.createElement('video');
-                video.setAttribute('playsinline', '');
-                video.setAttribute('webkit-playsinline', '');
-                video.preload = settings.preload;
-                const parent = iframe || wrapper.querySelector('img') || wrapper.firstElementChild;
-                if (parent && parent.parentNode) {
-                    parent.parentNode.insertBefore(video, parent);
-                    parent.hidden = true;
-                    makeVideoJs(video, [{ src: url, type: inferType(url) }], null);
-                }
-            } else if (iframe && /(?:youtube\.com|youtu\.be|vimeo\.com|redgifs\.com|gfycat\.com)/i.test(iframe.src)) {
-                // Cross-origin iframe contents cannot be inspected by a userscript.
-                // Keep the original working player and annotate why it was not replaced.
-                if (!wrapper.querySelector('.rms-vjs-fallback')) {
-                    const note = document.createElement('div');
-                    note.className = 'rms-vjs-fallback';
-                    note.textContent = 'Video.js replacement skipped: this is a third-party embedded player. Its media URL is cross-origin or provider-controlled.';
-                    wrapper.appendChild(note);
-                }
+            if (wrapper.matches('iframe, object, embed') && wrapper.closest('.rms-vjs-shell')) return;
+            if (wrapper.querySelector && wrapper.querySelector('video[data-rms-vjs-ready], .rms-vjs-shell')) return;
+
+            const url = findPlayableMediaUrl(wrapper);
+            if (!url) return; // A lazy-loaded source may appear later.
+            let mediaNode = wrapper.matches('iframe, object, embed')
+                ? wrapper
+                : wrapper.querySelector('iframe[src], object[data], embed[src], img');
+            if (!mediaNode) return;
+
+            // A provider page URL is not a direct media source. The userscript can
+            // process that provider's own frame separately when browser permissions allow.
+            if (!/\\.(mp4|m4v|webm|ogv|ogg|m3u8|mpd|gifv?)(?:[?#]|$)/i.test(url) &&
+                !/v\\.redd\\.it/i.test(url)) {
+                wrapper.dataset.rmsVjsEmbedScanned = '1';
+                return;
+            }
+
+            const video = document.createElement('video');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('webkit-playsinline', '');
+            video.preload = settings.preload;
+            const original = mediaNode;
+            if (original.parentNode) {
+                original.parentNode.insertBefore(video, original);
+                original.hidden = true;
+                wrapper.dataset.rmsVjsEmbedScanned = '1';
+                makeVideoJs(video, [{ src: url, type: inferType(url) }], original);
             }
         });
     }
@@ -433,7 +450,7 @@
         addStyles();
         replaceExistingVideos();
         replaceGifImages();
-        replaceRedditEmbedWrappers();
+        replaceEmbedWrappers();
     }
 
     function queueScan() {
