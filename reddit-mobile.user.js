@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.18.0
+// @version      1.19.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.18.0
+ * Reddit Mobile Style 1.19.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -552,11 +552,17 @@ html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="cross
 }
 
 /*
- * Expanded media has no viewport-height cap. Start at full content width;
- * user controls can scale it beyond that width in either direction.
+ * Expanded media may grow to the available screen dimensions, but must not
+ * exceed the viewport. Scale controls are bounded by these same limits.
  */
 html.reddit-mobile-style {
-    --rms-media-scale: 1;
+    --rms-media-max-width: 100vw;
+    --rms-media-max-height: 100vh;
+}
+@supports (height: 100dvh) {
+    html.reddit-mobile-style {
+        --rms-media-max-height: 100dvh;
+    }
 }
 
 html.reddit-mobile-style .expando img,
@@ -580,8 +586,8 @@ html.reddit-mobile-style .reddit-video-player iframe,
 html.reddit-mobile-style .res-media img,
 html.reddit-mobile-style .res-media video,
 html.reddit-mobile-style .res-media iframe {
-    max-height: none !important;
-    max-width: none !important;
+    max-width: var(--rms-media-max-width) !important;
+    max-height: var(--rms-media-max-height) !important;
     box-sizing: border-box !important;
 }
 
@@ -595,11 +601,21 @@ html.reddit-mobile-style .media-preview-content video,
 html.reddit-mobile-style .reddit-video-player video,
 html.reddit-mobile-style .res-media video {
     display: block !important;
-    width: 100% !important;
+    width: auto !important;
     height: auto !important;
-    max-width: none !important;
-    max-height: none !important;
+    max-width: var(--rms-media-max-width) !important;
+    max-height: var(--rms-media-max-height) !important;
     object-fit: contain !important;
+}
+
+/* Hide duplicate blurred placeholders when a clear media version is present. */
+html.reddit-mobile-style .expando img[class*="blurred"],
+html.reddit-mobile-style .expando img[class*="blurred"] ~ img,
+html.reddit-mobile-style .expando img[style*="blur("],
+html.reddit-mobile-style .expando img[style*="blur("] ~ img,
+html.reddit-mobile-style .media-preview img[class*="blurred"],
+html.reddit-mobile-style .media-preview img[style*="blur("] {
+    display: none !important;
 }
 
 html.reddit-mobile-style .expando iframe,
@@ -609,14 +625,13 @@ html.reddit-mobile-style .media-embed iframe,
 html.reddit-mobile-style .reddit-video-player iframe,
 html.reddit-mobile-style .res-media iframe {
     display: block !important;
-    width: calc(100% * var(--rms-media-scale, 1)) !important;
+    width: min(100%, var(--rms-media-max-width)) !important;
     height: auto !important;
     aspect-ratio: 16 / 9;
-    max-width: none !important;
-    max-height: none !important;
+    max-width: var(--rms-media-max-width) !important;
+    max-height: var(--rms-media-max-height) !important;
 }
 
-/* Scale controls sit immediately above each expanded media area. */
 html.reddit-mobile-style .rms-media-controls {
     display: flex !important;
     align-items: center !important;
@@ -977,37 +992,53 @@ html.reddit-mobile-style .side {
         root.dataset.rmsMediaControlsInstalled = '1';
 
         const mediaSelector = 'img, video, iframe, canvas, svg, object, embed';
-        const containerSelector = '.expando, .media-preview, .media-preview-content, .media-embed, .reddit-video-player, .res-media';
+        const outerSelector = '.expando, .media-preview, .media-preview-content, .media-embed, .reddit-video-player, .res-media';
+        const maxScale = () => {
+            const w = Math.max(1, document.documentElement.clientWidth);
+            const h = Math.max(1, window.visualViewport ? window.visualViewport.height : window.innerHeight);
+            return { w, h };
+        };
 
         function addControls(container) {
-            if (!container || container.querySelector(':scope > .rms-media-controls')) return;
-            const media = container.querySelector(mediaSelector);
-            if (!media || media.closest('.thumbnail')) return;
+            if (!container || container.dataset.rmsControlsAdded === '1') return;
+            if (container.closest('.thumbnail')) return;
+            if (!container.querySelector(mediaSelector)) return;
+
+            // Only add controls to the outermost recognized media container.
+            // Nested RES/Reddit wrappers otherwise created duplicate control bars.
+            if (container.parentElement && container.parentElement.closest(outerSelector)) return;
+            container.dataset.rmsControlsAdded = '1';
+
             const controls = document.createElement('div');
             controls.className = 'rms-media-controls';
-            const down = document.createElement('button');
-            down.type = 'button';
-            down.textContent = '−';
-            down.setAttribute('aria-label', 'Scale media down');
-            const reset = document.createElement('button');
-            reset.type = 'button';
-            reset.textContent = 'Reset';
-            reset.setAttribute('aria-label', 'Reset media scale');
-            const up = document.createElement('button');
-            up.type = 'button';
-            up.textContent = '+';
-            up.setAttribute('aria-label', 'Scale media up');
+            const makeButton = (text, label) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = text;
+                button.setAttribute('aria-label', label);
+                return button;
+            };
+            const down = makeButton('−', 'Scale media down');
+            const reset = makeButton('Reset', 'Reset media scale');
+            const up = makeButton('+', 'Scale media up');
             const label = document.createElement('span');
             label.className = 'rms-media-scale-label';
+
             let scale = 1;
             const apply = () => {
-                container.style.setProperty('--rms-media-scale', String(scale));
-                const media = container.querySelector(mediaSelector);
-                if (media) media.style.setProperty('width', (scale * 100) + '%', 'important');
+                const { w, h } = maxScale();
+                const media = Array.from(container.querySelectorAll(mediaSelector))
+                    .filter(el => !el.closest('.thumbnail'));
+                media.forEach(el => {
+                    el.style.setProperty('width', (scale * 100) + '%', 'important');
+                    el.style.setProperty('max-width', w + 'px', 'important');
+                    el.style.setProperty('max-height', h + 'px', 'important');
+                    el.style.setProperty('height', 'auto', 'important');
+                });
                 label.textContent = Math.round(scale * 100) + '%';
             };
             down.addEventListener('click', () => { scale = Math.max(0.25, Math.round((scale - 0.25) * 100) / 100); apply(); });
-            up.addEventListener('click', () => { scale = Math.round((scale + 0.25) * 100) / 100; apply(); });
+            up.addEventListener('click', () => { scale = Math.min(4, Math.round((scale + 0.25) * 100) / 100); apply(); });
             reset.addEventListener('click', () => { scale = 1; apply(); });
             controls.append(down, reset, up, label);
             container.insertBefore(controls, container.firstChild);
@@ -1015,11 +1046,21 @@ html.reddit-mobile-style .side {
         }
 
         function scan() {
-            document.querySelectorAll(containerSelector).forEach(addControls);
+            // Prioritize .expando as the single control surface for standard posts.
+            document.querySelectorAll('.expando').forEach(addControls);
+            document.querySelectorAll(outerSelector).forEach(container => {
+                if (!container.closest('.expando')) addControls(container);
+            });
         }
         scan();
         const observer = new MutationObserver(() => scan());
         observer.observe(document.documentElement, { childList: true, subtree: true });
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.rms-media-controls').forEach(controls => {
+                const container = controls.parentElement;
+                if (container) controls.querySelector('button[aria-label="Reset media scale"]')?.click();
+            });
+        }, { passive: true });
     }
 
     function installDrawerButtons() {
