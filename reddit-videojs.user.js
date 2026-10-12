@@ -371,10 +371,7 @@
             const original = img.cloneNode(true);
             img.dataset.rmsVjsGif = '1';
             const sources = [{ src: url, type: inferType(url) }];
-            const shell = document.createElement('div');
-            shell.className = 'rms-vjs-shell';
-            shell.appendChild(video);
-            img.replaceWith(shell);
+            img.replaceWith(video);
             makeVideoJs(video, sources, original);
         });
     }
