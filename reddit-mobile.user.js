@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.20.0
+// @version      1.21.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.20.0
+ * Reddit Mobile Style 1.21.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -996,20 +996,31 @@ html.reddit-mobile-style .side {
 
         const mediaSelector = 'img, video, iframe, canvas, svg, object, embed';
         const outerSelector = '.expando, .media-preview, .media-preview-content, .media-embed, .reddit-video-player, .res-media';
-        const maxScale = () => {
-            const w = Math.max(1, document.documentElement.clientWidth);
-            const h = Math.max(1, window.visualViewport ? window.visualViewport.height : window.innerHeight);
-            return { w, h };
-        };
 
-        function addControls(container) {
+        function readBaseDimension(el, dimension) {
+            const cssValue = el.style.getPropertyValue(dimension);
+            const cssMatch = cssValue && cssValue.trim().match(/^([0-9]+(?:\.[0-9]+)?)px$/i);
+            if (cssMatch) return Math.max(1, parseFloat(cssMatch[1]));
+
+            const attr = el.getAttribute(dimension);
+            if (attr && /^\d+(?:\.\d+)?$/.test(attr)) {
+                return Math.max(1, parseFloat(attr));
+            }
+
+            const rect = el.getBoundingClientRect();
+            const measured = dimension === 'width' ? rect.width : rect.height;
+            return Math.max(1, measured || parseFloat(getComputedStyle(el)[dimension]) || 1);
+        }
+
+        function addControls(container, targetOverride = null) {
             if (!container || container.dataset.rmsControlsAdded === '1') return;
             if (container.closest('.thumbnail')) return;
-            if (!container.querySelector(mediaSelector)) return;
+            const initialTargets = targetOverride || Array.from(container.querySelectorAll(mediaSelector))
+                .filter(el => !el.closest('.thumbnail'));
+            if (!initialTargets.length) return;
 
-            // Only add controls to the outermost recognized media container.
-            // Nested RES/Reddit wrappers otherwise created duplicate control bars.
-            if (container.parentElement && container.parentElement.closest(outerSelector)) return;
+            // Avoid duplicate controls for nested Reddit/RES media wrappers.
+            if (!targetOverride && container.parentElement && container.parentElement.closest(outerSelector)) return;
             container.dataset.rmsControlsAdded = '1';
 
             const controls = document.createElement('div');
@@ -1027,21 +1038,39 @@ html.reddit-mobile-style .side {
             const label = document.createElement('span');
             label.className = 'rms-media-scale-label';
 
+            // Capture un-constrained dimensions before applying our own inline
+            // sizing. This supports RES iframes whose inline size exceeds the viewport.
+            const targets = initialTargets.map(el => ({
+                el,
+                width: readBaseDimension(el, 'width'),
+                height: readBaseDimension(el, 'height')
+            }));
             let scale = 1;
+
             const apply = () => {
-                const { w, h } = maxScale();
-                const media = Array.from(container.querySelectorAll(mediaSelector))
-                    .filter(el => !el.closest('.thumbnail'));
-                media.forEach(el => {
-                    el.style.setProperty('width', (scale * 100) + '%', 'important');
-                    el.style.setProperty('max-width', w + 'px', 'important');
-                    el.style.setProperty('max-height', h + 'px', 'important');
-                    el.style.setProperty('height', 'auto', 'important');
+                targets.forEach(({ el, width, height }) => {
+                    if (!el.isConnected) return;
+                    el.style.setProperty('width', (width * scale) + 'px', 'important');
+                    el.style.setProperty('height', (height * scale) + 'px', 'important');
+                    el.style.setProperty('max-width', 'none', 'important');
+                    el.style.setProperty('max-height', 'none', 'important');
+                    el.style.setProperty('min-width', '0', 'important');
+                    el.style.setProperty('min-height', '0', 'important');
+                    el.style.setProperty('aspect-ratio', 'auto', 'important');
+                    el.style.setProperty('box-sizing', 'border-box', 'important');
                 });
                 label.textContent = Math.round(scale * 100) + '%';
             };
-            down.addEventListener('click', () => { scale = Math.max(0.25, Math.round((scale - 0.25) * 100) / 100); apply(); });
-            up.addEventListener('click', () => { scale = Math.min(4, Math.round((scale + 0.25) * 100) / 100); apply(); });
+
+            down.addEventListener('click', () => {
+                scale = Math.max(0.1, Math.round((scale - 0.25) * 100) / 100);
+                apply();
+            });
+            // Deliberately no maximum: keep increasing the scale in 25% steps.
+            up.addEventListener('click', () => {
+                scale = Math.round((scale + 0.25) * 100) / 100;
+                apply();
+            });
             reset.addEventListener('click', () => { scale = 1; apply(); });
             controls.append(down, reset, up, label);
             container.insertBefore(controls, container.firstChild);
@@ -1049,20 +1078,26 @@ html.reddit-mobile-style .side {
         }
 
         function scan() {
-            // Prioritize .expando as the single control surface for standard posts.
+            // Prefer one control bar for each standard Reddit/RES media wrapper.
             document.querySelectorAll('.expando').forEach(addControls);
             document.querySelectorAll(outerSelector).forEach(container => {
                 if (!container.closest('.expando')) addControls(container);
             });
+
+            // Some RES embeds expose only the iframe's res-media-zoomable class,
+            // without a recognized wrapper. Attach controls beside that iframe.
+            document.querySelectorAll('iframe.res-media-zoomable').forEach(iframe => {
+                if (iframe.closest(outerSelector) || !iframe.parentElement) return;
+                addControls(iframe.parentElement, [iframe]);
+            });
         }
+
         scan();
         const observer = new MutationObserver(() => scan());
         observer.observe(document.documentElement, { childList: true, subtree: true });
         window.addEventListener('resize', () => {
-            document.querySelectorAll('.rms-media-controls').forEach(controls => {
-                const container = controls.parentElement;
-                if (container) controls.querySelector('button[aria-label="Reset media scale"]')?.click();
-            });
+            // Re-measureting on resize would lose the chosen scale. Keep the
+            // current dimensions; users can press Reset to return to 100%.
         }, { passive: true });
     }
 
