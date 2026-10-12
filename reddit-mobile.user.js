@@ -612,6 +612,37 @@ html.reddit-mobile-style body.comments-page #siteTable > .thing.link .expando-co
 }
 
 /*
+ * Expanded self-text in listing cards must span the full content area, not
+ * stay inside the narrow third grid column used by the collapsed card.
+ * Keep the card's title/meta row in the grid; only the expanded body escapes
+ * the grid and occupies a full-width row.
+ */
+html.reddit-mobile-style #siteTable > .thing > .expando {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 8px 8px !important;
+    float: none !important;
+    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing > .expando > form,
+html.reddit-mobile-style #siteTable > .thing > .expando .usertext-body,
+html.reddit-mobile-style #siteTable > .thing > .expando .md-container,
+html.reddit-mobile-style #siteTable > .thing > .expando .md {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/*
  * Full-width post pages, self-text, and comments.
  * Old Reddit applies desktop widths/margins to .sitetable, .thing, .entry,
  * .commentarea and .usertext-body. Remove those constraints without flattening
