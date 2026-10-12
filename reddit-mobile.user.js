@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.11.0
+// @version      1.12.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.11.0
+ * Reddit Mobile Style 1.12.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -682,6 +682,49 @@ html.reddit-mobile-style #siteTable > .thing > .expando .md {
     max-width: none !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/*
+ * Expanded listing content needs to be a sibling grid item of the post card,
+ * not trapped inside .entry (which occupies only grid column 3). display:contents
+ * lets .top-matter remain in the text column while .expando spans the full card.
+ * This intentionally applies to listing cards only, not post-detail pages.
+ */
+html.reddit-mobile-style #siteTable > .thing.link:has(> .entry > .expando) > .entry {
+    display: contents !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing.link:has(> .entry > .expando) > .entry > .top-matter {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 3px 5px 5px 0 !important;
+    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing.link:has(> .entry > .expando) > .entry > .expando {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 8px 8px !important;
+    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing.link:has(> .entry > .expando) > .entry > .expando,
+html.reddit-mobile-style #siteTable > .thing.link:has(> .entry > .expando) > .entry > .expando > form,
+html.reddit-mobile-style #siteTable > .thing.link:has(> .entry > .expando) > .entry > .expando .usertext-body,
+html.reddit-mobile-style #siteTable > .thing.link:has(> .entry > .expando) > .entry > .expando .md-container,
+html.reddit-mobile-style #siteTable > .thing.link:has(> .entry > .expando) > .entry > .expando .md {
+    min-width: 0 !important;
+    max-width: none !important;
     box-sizing: border-box !important;
 }
 
