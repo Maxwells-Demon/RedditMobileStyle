@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Universal Video.js Player Replacement
 // @namespace    RedditMobileStyle
-// @version      1.2.0
+// @version      1.3.0
 // @description  Attempts to replace HTML5 video players and compatible GIF/media sources with Video.js across websites and frames
 // @match        *://*/*
 // @require      https://vjs.zencdn.net/8.23.4/video.min.js
@@ -12,7 +12,7 @@
 (function () {
     'use strict';
 
-    const VERSION = '1.2.0';
+    const VERSION = '1.3.0';
     const STYLE_ID = 'rms-vjs-style';
     const PANEL_ID = 'rms-vjs-settings';
     const STORE_KEY = 'rmsVideoJsSettings';
@@ -341,9 +341,57 @@
         shell.appendChild(box);
     }
 
+    const observedShadowRoots = new WeakSet();
+
+    function queryAllDeep(selector) {
+        const results = [];
+        const visited = new Set();
+        const visit = root => {
+            if (!root || visited.has(root)) return;
+            visited.add(root);
+            let matches = [];
+            try { matches = Array.from(root.querySelectorAll(selector)); } catch (_) {}
+            results.push(...matches);
+            let elements = [];
+            try { elements = Array.from(root.querySelectorAll('*')); } catch (_) {}
+            elements.forEach(element => {
+                if (element.shadowRoot) visit(element.shadowRoot);
+            });
+        };
+        visit(document);
+        return results;
+    }
+
+    function installShadowRootStyles() {
+        queryAllDeep('*').forEach(element => {
+            const root = element.shadowRoot;
+            if (!root || root.querySelector('link[data-rms-vjs-shadow-css]')) return;
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = VJS_CSS;
+            link.dataset.rmsVjsShadowCss = '1';
+            root.appendChild(link);
+            const style = document.createElement('style');
+            style.textContent = `
+                .rms-vjs-shell{position:relative;width:100%;max-width:100vw;margin:8px 0;clear:both;overflow:hidden}
+                .rms-vjs-shell .video-js{width:100%;max-width:100vw;height:auto;max-height:100vh;aspect-ratio:16/9;background:#000;font-size:14px}
+                .rms-vjs-shell video{max-width:100vw!important;max-height:100vh!important;object-fit:contain!important}
+                .rms-vjs-shell .video-js .vjs-tech{width:100%;height:100%;object-fit:contain}
+                .rms-vjs-error{padding:8px;margin:4px 0;border:1px solid #a33;background:#241515;color:#fff;font:13px/1.4 sans-serif}
+            `;
+            root.appendChild(style);
+            if (observer && !observedShadowRoots.has(root)) {
+                try {
+                    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'href', 'data-url', 'data-video-url'] });
+                    observedShadowRoots.add(root);
+                } catch (_) {}
+            }
+        });
+    }
+
     function replaceExistingVideos() {
         if (!settings.replaceExistingVideo) return;
-        document.querySelectorAll('video:not([data-rms-vjs-ready])').forEach(video => {
+        queryAllDeep('video:not([data-rms-vjs-ready])').forEach(video => {
             if (inHiddenOrThumbnail(video)) return;
             const sources = collectSources(video);
             if (sources.length) makeVideoJs(video, sources, null);
@@ -366,7 +414,7 @@
 
     function replaceGifImages() {
         if (!settings.replaceGifs) return;
-        document.querySelectorAll('img:not([data-rms-vjs-gif])').forEach(img => {
+        queryAllDeep('img:not([data-rms-vjs-gif])').forEach(img => {
             if (inHiddenOrThumbnail(img) || img.closest('.rms-vjs-shell')) return;
             const raw = img.currentSrc || img.src;
             if (!raw || !/\.gifv?(?:[?#]|$)/i.test(raw)) return;
@@ -390,7 +438,7 @@
     function replaceEmbedWrappers() {
         if (!settings.replaceEmbeds) return;
         const selector = 'iframe[src], object[data], embed[src], .expando, .media-preview, .media-preview-content, .media-embed, .video-wrapper, .video-container, .reddit-video-player, .res-media, [data-video-url], [data-media-url]';
-        document.querySelectorAll(selector).forEach(wrapper => {
+        queryAllDeep(selector).forEach(wrapper => {
             if (wrapper.dataset.rmsVjsEmbedScanned === '1') return;
             if (inHiddenOrThumbnail(wrapper)) return;
             if (wrapper.matches('iframe, object, embed') && wrapper.closest('.rms-vjs-shell')) return;
@@ -448,6 +496,7 @@
         scanQueued = false;
         if (!document.body || !window.videojs) return;
         addStyles();
+        installShadowRootStyles();
         replaceExistingVideos();
         replaceGifImages();
         replaceEmbedWrappers();
@@ -465,10 +514,11 @@
         scan();
         observer = new MutationObserver(queueScan);
         observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'href', 'data-url', 'data-video-url'] });
+        installShadowRootStyles();
         window.addEventListener('pageshow', queueScan);
         window.addEventListener('popstate', queueScan);
         window.addEventListener('resize', () => {
-            document.querySelectorAll('.rms-vjs-shell').forEach(shell => {
+            queryAllDeep('.rms-vjs-shell').forEach(shell => {
                 const video = shell.querySelector('video');
                 if (video && window.videojs.getPlayer(video)) {
                     try { window.videojs.getPlayer(video).trigger('playerresize'); } catch (_) {}
