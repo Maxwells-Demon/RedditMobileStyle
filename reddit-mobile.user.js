@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.15.0
+// @version      1.16.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.15.0
+ * Reddit Mobile Style 1.16.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -574,7 +574,7 @@ html.reddit-mobile-style .res-media iframe {
     box-sizing: border-box !important;
 }
 
-/* Fill available width, but preserve proportions and cap rendered height. */
+/* Force media to grow to the available content width (width:auto retains\n * intrinsic small sizes). Cap its displayed box at viewport height. */
 html.reddit-mobile-style .expando img,
 html.reddit-mobile-style .media-preview img,
 html.reddit-mobile-style .media-preview-content img,
@@ -585,7 +585,7 @@ html.reddit-mobile-style .media-preview-content video,
 html.reddit-mobile-style .reddit-video-player video,
 html.reddit-mobile-style .res-media video {
     display: block !important;
-    width: auto !important;
+    width: 100% !important;
     height: auto !important;
     max-width: 100% !important;
     max-height: var(--rms-media-max-height) !important;
