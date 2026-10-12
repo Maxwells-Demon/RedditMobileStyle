@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.14.0
+// @version      1.15.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.14.0
+ * Reddit Mobile Style 1.15.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -574,36 +574,38 @@ html.reddit-mobile-style .res-media iframe {
     box-sizing: border-box !important;
 }
 
+/* Fill available width, but preserve proportions and cap rendered height. */
 html.reddit-mobile-style .expando img,
 html.reddit-mobile-style .media-preview img,
 html.reddit-mobile-style .media-preview-content img,
-html.reddit-mobile-style .res-media img {
-    width: auto !important;
-    height: auto !important;
-    max-width: 100% !important;
-    object-fit: contain !important;
-}
-
+html.reddit-mobile-style .res-media img,
 html.reddit-mobile-style .expando video,
 html.reddit-mobile-style .media-preview video,
 html.reddit-mobile-style .media-preview-content video,
 html.reddit-mobile-style .reddit-video-player video,
 html.reddit-mobile-style .res-media video {
+    display: block !important;
     width: auto !important;
     height: auto !important;
     max-width: 100% !important;
+    max-height: var(--rms-media-max-height) !important;
     object-fit: contain !important;
 }
 
+/* Embedded players should occupy the full available width, not 56.25vw.
+ * Aspect ratio determines their natural height; viewport height is the cap. */
 html.reddit-mobile-style .expando iframe,
 html.reddit-mobile-style .media-preview iframe,
 html.reddit-mobile-style .media-preview-content iframe,
 html.reddit-mobile-style .media-embed iframe,
 html.reddit-mobile-style .reddit-video-player iframe,
 html.reddit-mobile-style .res-media iframe {
-    height: min(56.25vw, var(--rms-media-max-height)) !important;
-    max-width: 100% !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
     aspect-ratio: 16 / 9;
+    max-width: 100% !important;
+    max-height: var(--rms-media-max-height) !important;
 }
 
 /* Expandos/media must respect the phone content column. */
