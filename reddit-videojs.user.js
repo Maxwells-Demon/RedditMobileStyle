@@ -1,21 +1,18 @@
 // ==UserScript==
-// @name         Reddit Video.js Player Replacement
+// @name         Universal Video.js Player Replacement
 // @namespace    RedditMobileStyle
-// @version      1.1.0
-// @description  Replaces compatible Reddit video/GIF media with Video.js and exposes playback settings
-// @match        https://old.reddit.com/*
-// @match        https://www.reddit.com/*
-// @match        https://reddit.com/*
+// @version      1.2.0
+// @description  Attempts to replace HTML5 video players and compatible GIF/media sources with Video.js across websites and frames
+// @match        *://*/*
 // @require      https://vjs.zencdn.net/8.23.4/video.min.js
 // @grant        none
 // @run-at       document-idle
-// @noframes
 // ==/UserScript==
 
 (function () {
     'use strict';
 
-    const VERSION = '1.1.0';
+    const VERSION = '1.2.0';
     const STYLE_ID = 'rms-vjs-style';
     const PANEL_ID = 'rms-vjs-settings';
     const STORE_KEY = 'rmsVideoJsSettings';
@@ -31,7 +28,7 @@
         playbackRate: 1,
         replaceGifs: true,
         replaceExistingVideo: true,
-        replaceRedditEmbeds: true,
+        replaceEmbeds: true,
         scanCollapsedPosts: false
     };
 
@@ -67,7 +64,6 @@
             .rms-vjs-shell { max-width:100vw; max-height:100vh; overflow:hidden; }
             .rms-vjs-shell .video-js { width:100%; max-width:100vw; height:auto; max-height:100vh; aspect-ratio:16/9; background:#000; font-size:14px; }
             .rms-vjs-shell video { max-width:100vw!important; max-height:100vh!important; object-fit:contain!important; }
-            .censored-preview { display:none!important; }
             .rms-vjs-shell .video-js video { object-fit:contain; }
             .rms-vjs-shell .video-js .vjs-tech { width:100%; height:100%; object-fit:contain; }
             .rms-vjs-error { padding:8px; margin:4px 0; border:1px solid #a33; background:#241515; color:#fff; font:13px/1.4 sans-serif; }
@@ -122,7 +118,7 @@
                 <label class="rms-vjs-check" for="rms-vjs-controls"><span>Show player controls</span><input id="rms-vjs-controls" type="checkbox"></label>
                 <label class="rms-vjs-check" for="rms-vjs-gifs"><span>Replace compatible GIFs</span><input id="rms-vjs-gifs" type="checkbox"></label>
                 <label class="rms-vjs-check" for="rms-vjs-existing"><span>Restyle existing HTML video players</span><input id="rms-vjs-existing" type="checkbox"></label>
-                <label class="rms-vjs-check" for="rms-vjs-embeds"><span>Try Reddit video embed URLs</span><input id="rms-vjs-embeds" type="checkbox"></label>
+                <label class="rms-vjs-check" for="rms-vjs-embeds"><span>Scan embeds for direct media URLs</span><input id="rms-vjs-embeds" type="checkbox"></label>
                 <label class="rms-vjs-check" for="rms-vjs-collapsed"><span>Scan collapsed posts too</span><input id="rms-vjs-collapsed" type="checkbox"></label>
             </div>
             <div class="rms-vjs-actions"><button type="button" data-action="apply">Apply + rescan</button><button type="button" data-action="reset">Reset</button></div>
@@ -164,7 +160,7 @@
         check('rms-vjs-controls', settings.controls);
         check('rms-vjs-gifs', settings.replaceGifs);
         check('rms-vjs-existing', settings.replaceExistingVideo);
-        check('rms-vjs-embeds', settings.replaceRedditEmbeds);
+        check('rms-vjs-embeds', settings.replaceEmbeds);
         check('rms-vjs-collapsed', settings.scanCollapsedPosts);
     }
 
@@ -181,7 +177,7 @@
             controls: checked('rms-vjs-controls'),
             replaceGifs: checked('rms-vjs-gifs'),
             replaceExistingVideo: checked('rms-vjs-existing'),
-            replaceRedditEmbeds: checked('rms-vjs-embeds'),
+            replaceEmbeds: checked('rms-vjs-embeds'),
             scanCollapsedPosts: checked('rms-vjs-collapsed')
         };
     }
@@ -462,7 +458,7 @@
                 }
             });
         }, { passive: true });
-        console.info('[Reddit Video.js] v' + VERSION + ' initialized');
+        console.info('[Universal Video.js] v' + VERSION + ' initialized on', location.href);
     }
 
     if (document.readyState === 'loading') {
