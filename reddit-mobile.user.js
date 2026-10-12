@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.19.0
+// @version      1.20.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.19.0
+ * Reddit Mobile Style 1.20.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -565,7 +565,7 @@ html.reddit-mobile-style {
     }
 }
 
-html.reddit-mobile-style .expando img,
+html.reddit-mobile-style .expando img:not(.censored-preview),
 html.reddit-mobile-style .expando video,
 html.reddit-mobile-style .expando canvas,
 html.reddit-mobile-style .expando svg,
@@ -588,6 +588,7 @@ html.reddit-mobile-style .res-media video,
 html.reddit-mobile-style .res-media iframe {
     max-width: var(--rms-media-max-width) !important;
     max-height: var(--rms-media-max-height) !important;
+    object-fit: contain !important;
     box-sizing: border-box !important;
 }
 
@@ -609,6 +610,8 @@ html.reddit-mobile-style .res-media video {
 }
 
 /* Hide duplicate blurred placeholders when a clear media version is present. */
+html.reddit-mobile-style .censored-preview,
+html.reddit-mobile-style img.censored-preview,
 html.reddit-mobile-style .expando img[class*="blurred"],
 html.reddit-mobile-style .expando img[class*="blurred"] ~ img,
 html.reddit-mobile-style .expando img[style*="blur("],
