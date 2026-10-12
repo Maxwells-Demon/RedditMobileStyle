@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.12.0
+// @version      1.13.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.12.0
+ * Reddit Mobile Style 1.13.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -352,7 +352,7 @@ html.reddit-mobile-style #siteTable > .thing > .clearleft {
 html.reddit-mobile-style #siteTable > .thing {
     position: relative !important;
     display: grid !important;
-    grid-template-columns: 34px 76px minmax(0, 1fr) !important;
+    grid-template-columns: 34px calc(var(--rms-thumbnail-size, 68px) + var(--rms-thumbnail-gap, 8px)) minmax(0, 1fr) !important;
     align-items: start !important;
     width: 100% !important;
     min-width: 0 !important;
@@ -428,12 +428,12 @@ html.reddit-mobile-style #siteTable > .thing > .thumbnail {
     display: block !important;
     float: none !important;
     position: relative !important;
-    width: 68px !important;
-    max-width: 68px !important;
+    width: var(--rms-thumbnail-size, 68px) !important;
+    max-width: none !important;
     min-width: 0 !important;
-    height: 68px !important;
-    max-height: 68px !important;
-    margin: 6px 8px 6px 0 !important;
+    height: var(--rms-thumbnail-size, 68px) !important;
+    max-height: none !important;
+    margin: 6px var(--rms-thumbnail-gap, 8px) 6px 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
@@ -442,10 +442,10 @@ html.reddit-mobile-style #siteTable > .thing > .thumbnail {
 
 html.reddit-mobile-style #siteTable > .thing > .thumbnail img {
     display: block !important;
-    width: 68px !important;
-    max-width: 68px !important;
-    height: 68px !important;
-    max-height: 68px !important;
+    width: var(--rms-thumbnail-size, 68px) !important;
+    max-width: none !important;
+    height: var(--rms-thumbnail-size, 68px) !important;
+    max-height: none !important;
     margin: 0 auto !important;
     object-fit: cover !important;
 }
@@ -836,8 +836,12 @@ html.reddit-mobile-style .side {
 }
 
 @media (max-width: 380px) {
+    html.reddit-mobile-style {
+        --rms-thumbnail-size: 56px;
+    }
+
     html.reddit-mobile-style #siteTable > .thing {
-        grid-template-columns: 32px 64px minmax(0, 1fr) !important;
+        grid-template-columns: 32px calc(var(--rms-thumbnail-size, 56px) + var(--rms-thumbnail-gap, 8px)) minmax(0, 1fr) !important;
     }
 
     html.reddit-mobile-style #siteTable > .thing > .midcol {
@@ -850,18 +854,12 @@ html.reddit-mobile-style .side {
         width: 32px !important;
     }
 
-    html.reddit-mobile-style #siteTable > .thing > .thumbnail {
-        width: 56px !important;
-        max-width: 56px !important;
-        height: 56px !important;
-        max-height: 56px !important;
-    }
-
+    html.reddit-mobile-style #siteTable > .thing > .thumbnail,
     html.reddit-mobile-style #siteTable > .thing > .thumbnail img {
-        width: 56px !important;
-        max-width: 56px !important;
-        height: 56px !important;
-        max-height: 56px !important;
+        width: var(--rms-thumbnail-size, 56px) !important;
+        max-width: none !important;
+        height: var(--rms-thumbnail-size, 56px) !important;
+        max-height: none !important;
     }
 }
         `;
