@@ -184,7 +184,7 @@
 
     function inHiddenOrThumbnail(el) {
         // Reddit-specific exclusions must not suppress players on other websites.
-        if (!/(^|\\.)reddit\\.com$/i.test(location.hostname)) return false;
+        if (!/(^|\.)reddit\.com$/i.test(location.hostname)) return false;
         if (el.closest('.thumbnail, .thing .midcol, .listing-chooser, #header, #sr-header-area')) return true;
         if (settings.scanCollapsedPosts) return false;
         const thing = el.closest('.thing');
@@ -405,8 +405,8 @@
 
             // A provider page URL is not a direct media source. The userscript can
             // process that provider's own frame separately when browser permissions allow.
-            if (!/\\.(mp4|m4v|webm|ogv|ogg|m3u8|mpd|gifv?)(?:[?#]|$)/i.test(url) &&
-                !/v\\.redd\\.it/i.test(url)) {
+            if (!/\.(mp4|m4v|webm|ogv|ogg|m3u8|mpd|gifv?)(?:[?#]|$)/i.test(url) &&
+                !/v\.redd\.it/i.test(url)) {
                 wrapper.dataset.rmsVjsEmbedScanned = '1';
                 return;
             }
