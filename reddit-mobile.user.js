@@ -1096,7 +1096,7 @@ html.reddit-mobile-style .side {
         const observer = new MutationObserver(() => scan());
         observer.observe(document.documentElement, { childList: true, subtree: true });
         window.addEventListener('resize', () => {
-            // Re-measureting on resize would lose the chosen scale. Keep the
+            // Re-measuring on resize would lose the chosen scale. Keep the
             // current dimensions; users can press Reset to return to 100%.
         }, { passive: true });
     }
