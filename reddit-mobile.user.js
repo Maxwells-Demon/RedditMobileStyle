@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.16.0
+// @version      1.17.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.16.0
+ * Reddit Mobile Style 1.17.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -433,7 +433,7 @@ html.reddit-mobile-style #siteTable > .thing > .thumbnail {
     min-width: 0 !important;
     height: var(--rms-thumbnail-size, 68px) !important;
     max-height: none !important;
-    margin: 6px var(--rms-thumbnail-gap, 8px) 6px 0 !important;
+    margin: 6px 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
@@ -443,11 +443,28 @@ html.reddit-mobile-style #siteTable > .thing > .thumbnail {
 html.reddit-mobile-style #siteTable > .thing > .thumbnail img {
     display: block !important;
     width: var(--rms-thumbnail-size, 68px) !important;
-    max-width: none !important;
+    max-width: 100% !important;
     height: var(--rms-thumbnail-size, 68px) !important;
     max-height: none !important;
     margin: 0 auto !important;
     object-fit: cover !important;
+}
+
+/* Reserve dedicated grid areas so legacy floated children cannot overlap. */
+html.reddit-mobile-style #siteTable > .thing > .thumbnail {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+}
+html.reddit-mobile-style #siteTable > .thing > .entry {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+}
+html.reddit-mobile-style #siteTable > .thing > .child,
+html.reddit-mobile-style #siteTable > .thing > .clearleft {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    clear: both !important;
+    float: none !important;
 }
 
 /* Keep the actual post content in the third grid column. */
@@ -535,18 +552,11 @@ html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="cross
 }
 
 /*
- * Expanded images and videos must fit within the visible screen height.
- * Use the dynamic viewport unit where supported, with vh as a fallback.
- * Apply to common native media and embedded preview frames on listing cards
- * and post-detail pages; preserve aspect ratio and allow media to shrink.
+ * Expanded media has no viewport-height cap. Start at full content width;
+ * user controls can scale it beyond that width in either direction.
  */
 html.reddit-mobile-style {
-    --rms-media-max-height: 100vh;
-}
-@supports (height: 100dvh) {
-    html.reddit-mobile-style {
-        --rms-media-max-height: 100dvh;
-    }
+    --rms-media-scale: 1;
 }
 
 html.reddit-mobile-style .expando img,
@@ -570,11 +580,11 @@ html.reddit-mobile-style .reddit-video-player iframe,
 html.reddit-mobile-style .res-media img,
 html.reddit-mobile-style .res-media video,
 html.reddit-mobile-style .res-media iframe {
-    max-height: var(--rms-media-max-height) !important;
+    max-height: none !important;
+    max-width: none !important;
     box-sizing: border-box !important;
 }
 
-/* Force media to grow to the available content width (width:auto retains\n * intrinsic small sizes). Cap its displayed box at viewport height. */
 html.reddit-mobile-style .expando img,
 html.reddit-mobile-style .media-preview img,
 html.reddit-mobile-style .media-preview-content img,
@@ -585,15 +595,13 @@ html.reddit-mobile-style .media-preview-content video,
 html.reddit-mobile-style .reddit-video-player video,
 html.reddit-mobile-style .res-media video {
     display: block !important;
-    width: 100% !important;
+    width: calc(100% * var(--rms-media-scale, 1)) !important;
     height: auto !important;
-    max-width: 100% !important;
-    max-height: var(--rms-media-max-height) !important;
+    max-width: none !important;
+    max-height: none !important;
     object-fit: contain !important;
 }
 
-/* Embedded players should occupy the full available width, not 56.25vw.
- * Aspect ratio determines their natural height; viewport height is the cap. */
 html.reddit-mobile-style .expando iframe,
 html.reddit-mobile-style .media-preview iframe,
 html.reddit-mobile-style .media-preview-content iframe,
@@ -601,13 +609,37 @@ html.reddit-mobile-style .media-embed iframe,
 html.reddit-mobile-style .reddit-video-player iframe,
 html.reddit-mobile-style .res-media iframe {
     display: block !important;
-    width: 100% !important;
+    width: calc(100% * var(--rms-media-scale, 1)) !important;
     height: auto !important;
     aspect-ratio: 16 / 9;
-    max-width: 100% !important;
-    max-height: var(--rms-media-max-height) !important;
+    max-width: none !important;
+    max-height: none !important;
 }
 
+/* Scale controls sit immediately above each expanded media area. */
+html.reddit-mobile-style .rms-media-controls {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin: 6px 0 !important;
+    padding: 4px 0 !important;
+    box-sizing: border-box !important;
+}
+html.reddit-mobile-style .rms-media-controls button {
+    min-width: 38px !important;
+    min-height: 34px !important;
+    padding: 4px 10px !important;
+    border: 1px solid #999 !important;
+    border-radius: 4px !important;
+    background: #f6f6f6 !important;
+    color: #222 !important;
+    font: 16px/1.2 sans-serif !important;
+}
+html.reddit-mobile-style .rms-media-scale-label {
+    font: 13px/1.2 sans-serif !important;
+    color: inherit !important;
+}
 /* Expandos/media must respect the phone content column. */
 html.reddit-mobile-style #siteTable > .thing .expando,
 html.reddit-mobile-style #siteTable > .thing .expando-content,
@@ -939,6 +971,55 @@ html.reddit-mobile-style .side {
         `;
     }
 
+    function installMediaScaleControls() {
+        const root = document.documentElement;
+        if (root.dataset.rmsMediaControlsInstalled === '1') return;
+        root.dataset.rmsMediaControlsInstalled = '1';
+
+        const mediaSelector = 'img, video, iframe, canvas, svg, object, embed';
+        const containerSelector = '.expando, .media-preview, .media-preview-content, .media-embed, .reddit-video-player, .res-media';
+
+        function addControls(container) {
+            if (!container || container.querySelector(':scope > .rms-media-controls')) return;
+            const media = container.querySelector(mediaSelector);
+            if (!media || media.closest('.thumbnail')) return;
+            const controls = document.createElement('div');
+            controls.className = 'rms-media-controls';
+            const down = document.createElement('button');
+            down.type = 'button';
+            down.textContent = '−';
+            down.setAttribute('aria-label', 'Scale media down');
+            const reset = document.createElement('button');
+            reset.type = 'button';
+            reset.textContent = 'Reset';
+            reset.setAttribute('aria-label', 'Reset media scale');
+            const up = document.createElement('button');
+            up.type = 'button';
+            up.textContent = '+';
+            up.setAttribute('aria-label', 'Scale media up');
+            const label = document.createElement('span');
+            label.className = 'rms-media-scale-label';
+            let scale = 1;
+            const apply = () => {
+                container.style.setProperty('--rms-media-scale', String(scale));
+                label.textContent = Math.round(scale * 100) + '%';
+            };
+            down.addEventListener('click', () => { scale = Math.max(0.25, Math.round((scale - 0.25) * 100) / 100); apply(); });
+            up.addEventListener('click', () => { scale = Math.round((scale + 0.25) * 100) / 100; apply(); });
+            reset.addEventListener('click', () => { scale = 1; apply(); });
+            controls.append(down, reset, up, label);
+            container.insertBefore(controls, container.firstChild);
+            apply();
+        }
+
+        function scan() {
+            document.querySelectorAll(containerSelector).forEach(addControls);
+        }
+        scan();
+        const observer = new MutationObserver(() => scan());
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
     function installDrawerButtons() {
         if (document.getElementById('rms-left-toggle')) return;
 
@@ -1025,8 +1106,9 @@ html.reddit-mobile-style .side {
     injectStyle();
     injectPostLayout();
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', installDrawerButtons, { once: true });
+        document.addEventListener('DOMContentLoaded', () => { installDrawerButtons(); installMediaScaleControls(); }, { once: true });
     } else {
         installDrawerButtons();
+        installMediaScaleControls();
     }
 })();
