@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.17.0
+// @version      1.18.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.17.0
+ * Reddit Mobile Style 1.18.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -595,7 +595,7 @@ html.reddit-mobile-style .media-preview-content video,
 html.reddit-mobile-style .reddit-video-player video,
 html.reddit-mobile-style .res-media video {
     display: block !important;
-    width: calc(100% * var(--rms-media-scale, 1)) !important;
+    width: 100% !important;
     height: auto !important;
     max-width: none !important;
     max-height: none !important;
@@ -1002,6 +1002,8 @@ html.reddit-mobile-style .side {
             let scale = 1;
             const apply = () => {
                 container.style.setProperty('--rms-media-scale', String(scale));
+                const media = container.querySelector(mediaSelector);
+                if (media) media.style.setProperty('width', (scale * 100) + '%', 'important');
                 label.textContent = Math.round(scale * 100) + '%';
             };
             down.addEventListener('click', () => { scale = Math.max(0.25, Math.round((scale - 0.25) * 100) / 100); apply(); });
