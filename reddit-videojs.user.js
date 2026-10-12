@@ -371,8 +371,11 @@
             const original = img.cloneNode(true);
             img.dataset.rmsVjsGif = '1';
             const sources = [{ src: url, type: inferType(url) }];
+            const shell = document.createElement('div');
+            shell.className = 'rms-vjs-shell';
+            shell.appendChild(video);
+            img.replaceWith(shell);
             makeVideoJs(video, sources, original);
-            if (video.parentNode && img.parentNode) img.replaceWith(video.parentNode);
         });
     }
 
@@ -390,15 +393,11 @@
                 video.setAttribute('playsinline', '');
                 video.setAttribute('webkit-playsinline', '');
                 video.preload = settings.preload;
-                const shell = document.createElement('div');
-                shell.className = 'rms-vjs-shell';
                 const parent = iframe || wrapper.querySelector('img') || wrapper.firstElementChild;
                 if (parent && parent.parentNode) {
-                    parent.parentNode.insertBefore(shell, parent);
+                    parent.parentNode.insertBefore(video, parent);
                     parent.hidden = true;
-                    shell.appendChild(video);
                     makeVideoJs(video, [{ src: url, type: inferType(url) }], null);
-                    shell.addEventListener('DOMNodeRemoved', () => { if (parent) parent.hidden = false; }, { once: true });
                 }
             } else if (iframe && /(?:youtube\.com|youtu\.be|vimeo\.com|redgifs\.com|gfycat\.com)/i.test(iframe.src)) {
                 // Cross-origin iframe contents cannot be inspected by a userscript.
