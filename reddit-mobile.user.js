@@ -612,6 +612,49 @@ html.reddit-mobile-style body.comments-page #siteTable > .thing.link .expando-co
 }
 
 /*
+ * RES/old Reddit can wrap expanded self-text in extra .entry/usertext layers.
+ * Force the expanded subtree to break out of the listing's third grid column:
+ * the card's metadata stays in row 1, while the whole expanded form uses row 2.
+ */
+html.reddit-mobile-style #siteTable > .thing.link > .entry {
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing.link > .expando,
+html.reddit-mobile-style #siteTable > .thing.link > .entry > .expando,
+html.reddit-mobile-style #siteTable > .thing.link .expando:has(.usertext-body) {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 8px 8px !important;
+    float: none !important;
+    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing.link .expando form.usertext,
+html.reddit-mobile-style #siteTable > .thing.link .expando .usertext,
+html.reddit-mobile-style #siteTable > .thing.link .expando .usertext-body,
+html.reddit-mobile-style #siteTable > .thing.link .expando .md-container,
+html.reddit-mobile-style #siteTable > .thing.link .expando .md {
+    display: block !important;
+    position: static !important;
+    float: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/*
  * Expanded self-text in listing cards must span the full content area, not
  * stay inside the narrow third grid column used by the collapsed card.
  * Keep the card's title/meta row in the grid; only the expanded body escapes
