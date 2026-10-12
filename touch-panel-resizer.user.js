@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Touch Panel Resizer
 // @namespace    https://github.com/Maxwells-Demon/RedditMobileStyle
-// @version      2.1.0
-// @description  Select and resize webpage panels without activating them. Saves dimensions per website.
+// @version      2.2.0
+// @description  Long-press or use Select mode to select and resize any webpage element. Saves dimensions per website.
 // @match        *://*/*
 // @run-at       document-start
 // @grant        GM_getValue
@@ -27,6 +27,10 @@
   let selectionMode = false;
   let suppressNextClick = false;
   let selectionPointer = null;
+  let longPressTimer = null;
+  let touchStart = null;
+  let longPressFired = false;
+  let suppressUntil = 0;
 
   const host = document.createElement('div');
   host.style.cssText =
@@ -93,7 +97,9 @@
   const selectButton = shadow.getElementById('select');
 
   function path(el) {
+    if (el === document.documentElement) return 'html';
     if (el.id && CSS.escape) return '#' + CSS.escape(el.id);
+
     const parts = [];
     while (el && el.nodeType === 1 && el !== document.documentElement) {
       const tag = el.localName;
@@ -127,7 +133,7 @@
   }
 
   function selectElement(el) {
-    if (!el || el === document.body || el === document.documentElement || host.contains(el)) return;
+    if (!el || host.contains(el) || el.nodeType !== 1) return;
     selected = el;
     selector = path(el);
     update();
@@ -138,7 +144,8 @@
     if (!selected) return;
     saved[selector] = {
       w: selected.style.getPropertyValue('width'),
-      h: selected.style.getPropertyValue('height')
+      h: selected.style.getPropertyValue('height'),
+      boxSizing: selected.style.getPropertyValue('box-sizing')
     };
     store();
   }
@@ -150,6 +157,7 @@
         if (!el) continue;
         if (val.w) el.style.setProperty('width', val.w, 'important');
         if (val.h) el.style.setProperty('height', val.h, 'important');
+        if (val.boxSizing) el.style.setProperty('box-sizing', val.boxSizing, 'important');
       } catch {}
     }
   }
@@ -160,50 +168,113 @@
     if (enabled) status.textContent = 'Selection mode: tap an element';
   }
 
-  // The Select button is only displayed with the toolbar.
+  function elementAt(x, y) {
+    // Shadow DOM's overlay is excluded; inspect the page below it.
+    const el = document.elementFromPoint(x, y);
+    return el && !host.contains(el) ? el : null;
+  }
+
+  function cancelLongPress() {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    touchStart = null;
+  }
+
+  // Select mode: suppress the normal interaction and select on release.
   selectButton.addEventListener('click', () => setSelectionMode(true));
 
-  // Selection mode captures the gesture before ordinary page handlers.
   document.addEventListener('pointerdown', e => {
-    if (!selectionMode || host.contains(e.target)) return;
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (host.contains(e.target)) return;
 
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    selectionPointer = { id: e.pointerId, x: e.clientX, y: e.clientY };
-    suppressNextClick = true;
+    if (selectionMode) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      selectionPointer = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      suppressNextClick = true;
+      return;
+    }
+
+    // Long-press selection for touch and pen. Do not block normal interaction
+    // unless the long-press threshold is reached.
+    if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+    cancelLongPress();
+    longPressFired = false;
+    touchStart = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY
+    };
+    const { x, y, id } = touchStart;
+
+    longPressTimer = setTimeout(() => {
+      if (!touchStart || touchStart.id !== id) return;
+      longPressFired = true;
+      suppressUntil = Date.now() + 900;
+      suppressNextClick = true;
+      const target = elementAt(x, y);
+      if (target) selectElement(target);
+      if (navigator.vibrate) navigator.vibrate([25, 35, 25]);
+    }, 550);
+  }, true);
+
+  document.addEventListener('pointermove', e => {
+    if (selectionPointer && e.pointerId === selectionPointer.id) {
+      if (Math.hypot(e.clientX - selectionPointer.x, e.clientY - selectionPointer.y) > 10) {
+        // Keep selection anchored to the initial tap; don't turn it into a drag.
+      }
+    }
+
+    if (!touchStart || e.pointerId !== touchStart.id) return;
+    if (Math.hypot(e.clientX - touchStart.x, e.clientY - touchStart.y) > 12) {
+      cancelLongPress();
+    }
   }, true);
 
   document.addEventListener('pointerup', e => {
-    if (!selectionMode || !selectionPointer || e.pointerId !== selectionPointer.id) return;
+    if (selectionMode && selectionPointer && e.pointerId === selectionPointer.id) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const { x, y } = selectionPointer;
+      selectionPointer = null;
+      const target = elementAt(x, y);
+      if (target) {
+        selectElement(target);
+        setSelectionMode(false);
+      }
+      return;
+    }
 
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    const { x, y } = selectionPointer;
-    selectionPointer = null;
-
-    const target = document.elementFromPoint(x, y);
-    if (target && !host.contains(target)) {
-      selectElement(target);
-      setSelectionMode(false);
+    if (touchStart && e.pointerId === touchStart.id) {
+      const wasLongPress = longPressFired;
+      cancelLongPress();
+      if (wasLongPress) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+      longPressFired = false;
     }
   }, true);
 
   document.addEventListener('pointercancel', e => {
-    if (selectionPointer && e.pointerId === selectionPointer.id) {
-      selectionPointer = null;
+    if (selectionPointer && e.pointerId === selectionPointer.id) selectionPointer = null;
+    if (touchStart && e.pointerId === touchStart.id) {
+      cancelLongPress();
+      longPressFired = false;
     }
   }, true);
 
+  // Suppress the synthetic click produced after a long-press or Select-mode tap.
   document.addEventListener('click', e => {
-    if (!suppressNextClick) return;
+    if (!suppressNextClick && Date.now() > suppressUntil) return;
     suppressNextClick = false;
+    suppressUntil = 0;
     e.preventDefault();
     e.stopImmediatePropagation();
   }, true);
 
   document.addEventListener('contextmenu', e => {
-    if (selectionMode && !host.contains(e.target)) {
+    if ((selectionMode || longPressFired) && !host.contains(e.target)) {
       e.preventDefault();
       e.stopImmediatePropagation();
     }
@@ -239,7 +310,7 @@
   handle.addEventListener('pointercancel', finishResize);
 
   shadow.getElementById('parent').addEventListener('click', () => {
-    if (selected?.parentElement && selected.parentElement !== document.body) {
+    if (selected?.parentElement && selected.parentElement !== host) {
       selectElement(selected.parentElement);
     }
   });
