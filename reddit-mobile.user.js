@@ -569,6 +569,105 @@ html.reddit-mobile-style .res-selected {
 }
 
 /*
+ * Full-width post pages, self-text, and comments.
+ * Old Reddit applies desktop widths/margins to .sitetable, .thing, .entry,
+ * .commentarea and .usertext-body. Remove those constraints without flattening
+ * the comment tree or changing its native expand/collapse controls.
+ */
+html.reddit-mobile-style body > .content,
+html.reddit-mobile-style .content[role="main"],
+html.reddit-mobile-style .content .sitetable,
+html.reddit-mobile-style .content .commentarea,
+html.reddit-mobile-style .content .commentarea > .sitetable,
+html.reddit-mobile-style .content .commentarea > .usertext,
+html.reddit-mobile-style .content .commentarea .panestack-title,
+html.reddit-mobile-style .content .linklisting,
+html.reddit-mobile-style .content #siteTable,
+html.reddit-mobile-style .content .thing,
+html.reddit-mobile-style .content .thing > .entry,
+html.reddit-mobile-style .content .thing .expando,
+html.reddit-mobile-style .content .thing .usertext-body,
+html.reddit-mobile-style .content .thing .md-container,
+html.reddit-mobile-style .content .thing .md,
+html.reddit-mobile-style .content .comment,
+html.reddit-mobile-style .content .comment .entry,
+html.reddit-mobile-style .content .comment .usertext-body,
+html.reddit-mobile-style .content .comment .md-container,
+html.reddit-mobile-style .content .comment .md,
+html.reddit-mobile-style .content .child,
+html.reddit-mobile-style .content .sitetable .thing {
+    min-width: 0 !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style .content .commentarea,
+html.reddit-mobile-style .content .commentarea > .sitetable,
+html.reddit-mobile-style .content .commentarea .sitetable,
+html.reddit-mobile-style .content .commentarea .thing,
+html.reddit-mobile-style .content .commentarea .entry,
+html.reddit-mobile-style .content .commentarea .usertext-body,
+html.reddit-mobile-style .content .commentarea .md-container,
+html.reddit-mobile-style .content .commentarea .md,
+html.reddit-mobile-style .content .thing .expando,
+html.reddit-mobile-style .content .thing .expando > *,
+html.reddit-mobile-style .content .thing .media-preview,
+html.reddit-mobile-style .content .thing .media-preview-content {
+    width: 100% !important;
+}
+
+html.reddit-mobile-style .content .commentarea,
+html.reddit-mobile-style .content .commentarea > .sitetable,
+html.reddit-mobile-style .content .commentarea .sitetable,
+html.reddit-mobile-style .content .commentarea .thing,
+html.reddit-mobile-style .content .commentarea .entry,
+html.reddit-mobile-style .content .commentarea .usertext-body,
+html.reddit-mobile-style .content .commentarea .md-container,
+html.reddit-mobile-style .content .commentarea .md,
+html.reddit-mobile-style .content .thing .expando,
+html.reddit-mobile-style .content .thing .usertext-body {
+    float: none !important;
+    margin-right: 0 !important;
+}
+
+html.reddit-mobile-style .content .commentarea .thing {
+    padding-right: 0 !important;
+}
+
+html.reddit-mobile-style .content .commentarea .entry,
+html.reddit-mobile-style .content .commentarea .usertext-body,
+html.reddit-mobile-style .content .commentarea .md-container,
+html.reddit-mobile-style .content .commentarea .md {
+    overflow-wrap: anywhere !important;
+}
+
+html.reddit-mobile-style .content .commentarea .child {
+    margin-left: 10px !important;
+    padding-left: 6px !important;
+    border-left: 1px solid rgba(128,128,128,.35) !important;
+}
+
+html.reddit-mobile-style .content .commentarea .comment .midcol {
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
+    margin-right: 4px !important;
+}
+
+html.reddit-mobile-style .content .commentarea .comment .entry {
+    width: calc(100% - 28px) !important;
+}
+
+html.reddit-mobile-style .content .commentarea .usertext-edit,
+html.reddit-mobile-style .content .commentarea textarea,
+html.reddit-mobile-style .content .commentarea .usertext-edit .md,
+html.reddit-mobile-style .content .commentarea .usertext-edit textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/*
  * Keep the desktop sidebar hidden on phones, as in the original 0.1.0
  * shell. No drawer, event interception, or DOM relocation is performed.
  */
