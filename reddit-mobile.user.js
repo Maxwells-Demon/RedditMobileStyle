@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.13.0
+// @version      1.14.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -91,7 +91,7 @@
         style.id = STYLE_ID;
         style.textContent = `
 /*
- * Reddit Mobile Style 1.13.0
+ * Reddit Mobile Style 1.14.0
  * Stage 2: mobile listing reflow.
  */
 html.reddit-mobile-style,
@@ -532,6 +532,78 @@ html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="sourc
 html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="report"]),
 html.reddit-mobile-style #siteTable > .thing .flat-list li:has(a[onclick*="crosspost"]) {
     display: none !important;
+}
+
+/*
+ * Expanded images and videos must fit within the visible screen height.
+ * Use the dynamic viewport unit where supported, with vh as a fallback.
+ * Apply to common native media and embedded preview frames on listing cards
+ * and post-detail pages; preserve aspect ratio and allow media to shrink.
+ */
+html.reddit-mobile-style {
+    --rms-media-max-height: 100vh;
+}
+@supports (height: 100dvh) {
+    html.reddit-mobile-style {
+        --rms-media-max-height: 100dvh;
+    }
+}
+
+html.reddit-mobile-style .expando img,
+html.reddit-mobile-style .expando video,
+html.reddit-mobile-style .expando canvas,
+html.reddit-mobile-style .expando svg,
+html.reddit-mobile-style .expando iframe,
+html.reddit-mobile-style .expando object,
+html.reddit-mobile-style .expando embed,
+html.reddit-mobile-style .media-preview img,
+html.reddit-mobile-style .media-preview video,
+html.reddit-mobile-style .media-preview iframe,
+html.reddit-mobile-style .media-preview-content img,
+html.reddit-mobile-style .media-preview-content video,
+html.reddit-mobile-style .media-preview-content iframe,
+html.reddit-mobile-style .media-embed iframe,
+html.reddit-mobile-style .media-embed video,
+html.reddit-mobile-style .reddit-video-player,
+html.reddit-mobile-style .reddit-video-player video,
+html.reddit-mobile-style .reddit-video-player iframe,
+html.reddit-mobile-style .res-media img,
+html.reddit-mobile-style .res-media video,
+html.reddit-mobile-style .res-media iframe {
+    max-height: var(--rms-media-max-height) !important;
+    box-sizing: border-box !important;
+}
+
+html.reddit-mobile-style .expando img,
+html.reddit-mobile-style .media-preview img,
+html.reddit-mobile-style .media-preview-content img,
+html.reddit-mobile-style .res-media img {
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+}
+
+html.reddit-mobile-style .expando video,
+html.reddit-mobile-style .media-preview video,
+html.reddit-mobile-style .media-preview-content video,
+html.reddit-mobile-style .reddit-video-player video,
+html.reddit-mobile-style .res-media video {
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+}
+
+html.reddit-mobile-style .expando iframe,
+html.reddit-mobile-style .media-preview iframe,
+html.reddit-mobile-style .media-preview-content iframe,
+html.reddit-mobile-style .media-embed iframe,
+html.reddit-mobile-style .reddit-video-player iframe,
+html.reddit-mobile-style .res-media iframe {
+    height: min(56.25vw, var(--rms-media-max-height)) !important;
+    max-width: 100% !important;
+    aspect-ratio: 16 / 9;
 }
 
 /* Expandos/media must respect the phone content column. */
