@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.23.0
+// @version      1.24.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -602,11 +602,24 @@ html.reddit-mobile-style .media-preview-content video,
 html.reddit-mobile-style .reddit-video-player video,
 html.reddit-mobile-style .res-media video {
     display: block !important;
-    width: auto !important;
+    width: min(100%, calc(100vw - 16px)) !important;
     height: auto !important;
-    max-width: var(--rms-media-max-width) !important;
-    max-height: var(--rms-media-max-height) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 120px) !important;
     object-fit: contain !important;
+}
+@supports not (height: 100dvh) {
+    html.reddit-mobile-style .expando img,
+    html.reddit-mobile-style .media-preview img,
+    html.reddit-mobile-style .media-preview-content img,
+    html.reddit-mobile-style .res-media img,
+    html.reddit-mobile-style .expando video,
+    html.reddit-mobile-style .media-preview video,
+    html.reddit-mobile-style .media-preview-content video,
+    html.reddit-mobile-style .reddit-video-player video,
+    html.reddit-mobile-style .res-media video {
+        max-height: calc(100vh - 120px) !important;
+    }
 }
 
 /* Hide duplicate blurred placeholders when a clear media version is present. */
@@ -628,11 +641,21 @@ html.reddit-mobile-style .media-embed iframe,
 html.reddit-mobile-style .reddit-video-player iframe,
 html.reddit-mobile-style .res-media iframe {
     display: block !important;
-    width: min(100%, var(--rms-media-max-width)) !important;
+    width: min(100%, calc(100vw - 16px)) !important;
     height: auto !important;
     aspect-ratio: 16 / 9;
-    max-width: var(--rms-media-max-width) !important;
-    max-height: var(--rms-media-max-height) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 120px) !important;
+}
+@supports not (height: 100dvh) {
+    html.reddit-mobile-style .expando iframe,
+    html.reddit-mobile-style .media-preview iframe,
+    html.reddit-mobile-style .media-preview-content iframe,
+    html.reddit-mobile-style .media-embed iframe,
+    html.reddit-mobile-style .reddit-video-player iframe,
+    html.reddit-mobile-style .res-media iframe {
+        max-height: calc(100vh - 120px) !important;
+    }
 }
 
 html.reddit-mobile-style .rms-media-open-controls,
