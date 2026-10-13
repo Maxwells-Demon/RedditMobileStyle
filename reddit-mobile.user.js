@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Layout
 // @namespace    RedditMobileStyle
-// @version      1.28.0
+// @version      1.29.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -813,7 +813,7 @@ html.reddit-mobile-style .side {
     }
 }
 
-/* Expanded media must escape narrow post/RES wrappers and participate in document flow. */
+/* Expanded RES images: viewport-sized maximums, natural aspect ratio, normal document flow. */
 html.reddit-mobile-style #siteTable > .thing .res-expando-box,
 html.reddit-mobile-style #siteTable > .thing .res-expando-box-inner,
 html.reddit-mobile-style #siteTable > .thing .res-image,
@@ -822,23 +822,36 @@ html.reddit-mobile-style #siteTable > .thing .res-media-with-controls-wrapper,
 html.reddit-mobile-style #siteTable > .thing .res-image > div[style*="height"] {
     box-sizing: border-box !important;
     display: block !important;
+    position: static !important;
+    float: none !important;
     width: 100vw !important;
     max-width: none !important;
     height: auto !important;
     max-height: none !important;
     min-height: 0 !important;
-    margin-left: calc(50% - 50vw) !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
     overflow: visible !important;
+}
+
+html.reddit-mobile-style #siteTable > .thing .res-expando-box,
+html.reddit-mobile-style #siteTable > .thing .res-image {
+    margin-left: calc(50% - 50vw) !important;
 }
 
 html.reddit-mobile-style #siteTable > .thing .res-expando-link {
     display: block !important;
-    width: 100% !important;
+    position: static !important;
+    float: none !important;
+    width: auto !important;
     max-width: none !important;
     height: auto !important;
     max-height: none !important;
+    overflow: visible !important;
 }
 
+/* RES uses an inline max-width (often 100px); override it on its actual image class. */
+html.reddit-mobile-style #siteTable > .thing img.res-image-media,
 html.reddit-mobile-style #siteTable > .thing .expando img:not(.censored-preview),
 html.reddit-mobile-style #siteTable > .thing .expando video,
 html.reddit-mobile-style #siteTable > .thing .media-preview img:not(.censored-preview),
@@ -848,11 +861,13 @@ html.reddit-mobile-style #siteTable > .thing .media-preview-content video,
 html.reddit-mobile-style #siteTable > .thing .res-media img:not(.censored-preview),
 html.reddit-mobile-style #siteTable > .thing .res-media video {
     display: block !important;
+    position: static !important;
+    float: none !important;
     box-sizing: border-box !important;
-    width: 100% !important;
+    width: auto !important;
     height: auto !important;
-    max-width: none !important;
-    max-height: none !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
     object-fit: contain !important;
     margin-left: auto !important;
     margin-right: auto !important;
