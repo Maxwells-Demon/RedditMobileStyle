@@ -855,9 +855,13 @@ html.reddit-mobile-style #siteTable > .thing > .midcol .score.unvoted {
 }
 
 /* Double the post title and the expand/collapse button hit area. */
-html.reddit-mobile-style #siteTable > .thing .title {
+html.reddit-mobile-style #siteTable > .thing p.title {
     font-size: 2em !important;
     line-height: 1.2 !important;
+}
+html.reddit-mobile-style #siteTable > .thing p.title a.title {
+    font-size: inherit !important;
+    line-height: inherit !important;
 }
 html.reddit-mobile-style #siteTable > .thing .expando-button {
     width: 32px !important;
