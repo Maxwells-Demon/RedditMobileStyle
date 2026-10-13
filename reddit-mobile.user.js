@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Layout
 // @namespace    RedditMobileStyle
-// @version      1.25.0
+// @version      1.26.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -326,8 +326,6 @@ html.reddit-mobile-style #siteTable > .thing > .midcol .arrow {
     height: 14px !important;
     margin: 2px auto !important;
     padding: 0 !important;
-    background-position: center center !important;
-    background-repeat: no-repeat !important;
     cursor: pointer !important;
     pointer-events: auto !important;
 }
@@ -813,6 +811,66 @@ html.reddit-mobile-style .side {
         height: var(--rms-thumbnail-size, 56px) !important;
         max-height: none !important;
     }
+}
+
+/* Expanded media should occupy the available viewport box without distortion. */
+html.reddit-mobile-style #siteTable > .thing .expando img:not(.censored-preview),
+html.reddit-mobile-style #siteTable > .thing .expando video,
+html.reddit-mobile-style #siteTable > .thing .media-preview img:not(.censored-preview),
+html.reddit-mobile-style #siteTable > .thing .media-preview video,
+html.reddit-mobile-style #siteTable > .thing .media-preview-content img:not(.censored-preview),
+html.reddit-mobile-style #siteTable > .thing .media-preview-content video,
+html.reddit-mobile-style #siteTable > .thing .res-media img:not(.censored-preview),
+html.reddit-mobile-style #siteTable > .thing .res-media video {
+    display: block !important;
+    width: calc(100vw - 16px) !important;
+    height: calc(100dvh - 120px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 120px) !important;
+    object-fit: contain !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+@supports not (height: 100dvh) {
+    html.reddit-mobile-style #siteTable > .thing .expando img:not(.censored-preview),
+    html.reddit-mobile-style #siteTable > .thing .expando video,
+    html.reddit-mobile-style #siteTable > .thing .media-preview img:not(.censored-preview),
+    html.reddit-mobile-style #siteTable > .thing .media-preview video,
+    html.reddit-mobile-style #siteTable > .thing .media-preview-content img:not(.censored-preview),
+    html.reddit-mobile-style #siteTable > .thing .media-preview-content video,
+    html.reddit-mobile-style #siteTable > .thing .res-media img:not(.censored-preview),
+    html.reddit-mobile-style #siteTable > .thing .res-media video {
+        height: calc(100vh - 120px) !important;
+        max-height: calc(100vh - 120px) !important;
+    }
+}
+
+/* Reddit emits three score variants; show only the neutral one in the rail. */
+html.reddit-mobile-style #siteTable > .thing > .midcol .score.dislikes,
+html.reddit-mobile-style #siteTable > .thing > .midcol .score.likes {
+    display: none !important;
+}
+html.reddit-mobile-style #siteTable > .thing > .midcol .score.unvoted {
+    display: block !important;
+}
+
+/* Double the post title and the expand/collapse button hit area. */
+html.reddit-mobile-style #siteTable > .thing .title {
+    font-size: 2em !important;
+    line-height: 1.2 !important;
+}
+html.reddit-mobile-style #siteTable > .thing .expando-button {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    vertical-align: middle !important;
+}
+
+/* Remove the submitted timestamp while retaining author and subreddit. */
+html.reddit-mobile-style #siteTable > .thing .tagline time.live-timestamp,
+html.reddit-mobile-style #siteTable > .thing .tagline .live-timestamp {
+    display: none !important;
 }
         `;
     }
