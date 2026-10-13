@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Layout
 // @namespace    RedditMobileStyle
-// @version      1.27.0
+// @version      1.28.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -813,7 +813,7 @@ html.reddit-mobile-style .side {
     }
 }
 
-/* Expanded media: override RES's inline max-width:100px and its fixed-height wrapper. */
+/* Expanded media must escape narrow post/RES wrappers and participate in document flow. */
 html.reddit-mobile-style #siteTable > .thing .res-expando-box,
 html.reddit-mobile-style #siteTable > .thing .res-expando-box-inner,
 html.reddit-mobile-style #siteTable > .thing .res-image,
@@ -821,16 +821,22 @@ html.reddit-mobile-style #siteTable > .thing .res-media-independent,
 html.reddit-mobile-style #siteTable > .thing .res-media-with-controls-wrapper,
 html.reddit-mobile-style #siteTable > .thing .res-image > div[style*="height"] {
     box-sizing: border-box !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    display: block !important;
+    width: 100vw !important;
+    max-width: none !important;
     height: auto !important;
     max-height: none !important;
+    min-height: 0 !important;
+    margin-left: calc(50% - 50vw) !important;
+    overflow: visible !important;
 }
 
 html.reddit-mobile-style #siteTable > .thing .res-expando-link {
     display: block !important;
     width: 100% !important;
-    max-width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
 }
 
 html.reddit-mobile-style #siteTable > .thing .expando img:not(.censored-preview),
@@ -842,26 +848,14 @@ html.reddit-mobile-style #siteTable > .thing .media-preview-content video,
 html.reddit-mobile-style #siteTable > .thing .res-media img:not(.censored-preview),
 html.reddit-mobile-style #siteTable > .thing .res-media video {
     display: block !important;
+    box-sizing: border-box !important;
     width: 100% !important;
     height: auto !important;
-    max-width: 100% !important;
-    max-height: calc(100dvh - 120px) !important;
+    max-width: none !important;
+    max-height: none !important;
     object-fit: contain !important;
     margin-left: auto !important;
     margin-right: auto !important;
-}
-
-@supports not (height: 100dvh) {
-    html.reddit-mobile-style #siteTable > .thing .expando img:not(.censored-preview),
-    html.reddit-mobile-style #siteTable > .thing .expando video,
-    html.reddit-mobile-style #siteTable > .thing .media-preview img:not(.censored-preview),
-    html.reddit-mobile-style #siteTable > .thing .media-preview video,
-    html.reddit-mobile-style #siteTable > .thing .media-preview-content img:not(.censored-preview),
-    html.reddit-mobile-style #siteTable > .thing .media-preview-content video,
-    html.reddit-mobile-style #siteTable > .thing .res-media img:not(.censored-preview),
-    html.reddit-mobile-style #siteTable > .thing .res-media video {
-        max-height: calc(100vh - 120px) !important;
-    }
 }
 
 /* Reddit emits three score variants; show only the neutral one in the rail. */
