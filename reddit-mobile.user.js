@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Mobile Style
 // @namespace    RedditMobileStyle
-// @version      1.22.0
+// @version      1.23.0
 // @description  Responsive shell for classic old Reddit on smartphones
 // @match        https://*.reddit.com/*
 // @grant        none
@@ -635,6 +635,7 @@ html.reddit-mobile-style .res-media iframe {
     max-height: var(--rms-media-max-height) !important;
 }
 
+html.reddit-mobile-style .rms-media-open-controls,
 html.reddit-mobile-style .rms-media-controls {
     display: flex !important;
     align-items: center !important;
@@ -644,6 +645,21 @@ html.reddit-mobile-style .rms-media-controls {
     margin: 4px 0 !important;
     padding: 2px 0 !important;
     box-sizing: border-box !important;
+}
+html.reddit-mobile-style .rms-media-open-controls {
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: 30px !important;
+    min-height: 28px !important;
+    margin: 4px 0 !important;
+    padding: 4px 8px !important;
+    border: 1px solid #999 !important;
+    border-radius: 4px !important;
+    background: #f6f6f6 !important;
+    color: #222 !important;
+    font: 14px/1.1 sans-serif !important;
+    touch-action: manipulation !important;
 }
 html.reddit-mobile-style .rms-media-controls button {
     min-width: 30px !important;
@@ -1098,12 +1114,19 @@ html.reddit-mobile-style .side {
             });
 
             controls.append(down, reset, up, left, upMove, downMove, right, label);
+
+            const launcher = makeButton('Scale / move', 'Show media scale and translation controls');
+            launcher.className = 'rms-media-open-controls';
+            launcher.addEventListener('click', () => {
+                launcher.replaceWith(controls);
+                apply();
+            });
+
             if (container.matches(mediaSelector)) {
-                container.parentElement?.insertBefore(controls, container);
+                container.parentElement?.insertBefore(launcher, container);
             } else {
-                container.insertBefore(controls, container.firstChild);
+                container.insertBefore(launcher, container.firstChild);
             }
-            apply();
         }
 
         function scan() {
